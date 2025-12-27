@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>FR Color — Misurazione (Compatibile)</title>
+
+  <style>
+    /* =========================================================
+       FR COLOR — UI THEME (UFFICIALE)
+       - Palette ufficiale:
+         Navy: #1D3557
+         Light gray: #F5F5F7
+         Accenti solo dai colori logo (uso minimo):
+         Teal #26A69A, Blue #1E88E5, Red #E53935, Orange #FB8C00,
+         Yellow #FDD835, Green #43A047, Purple #8E24AA
+       - Stile: pulito, tecnico, ordinato, medio-alto
+       ========================================================= */
+    :root{
+      --bg: #F5F5F7;
+      --surface: #FFFFFF;
+      --surface-2: #FFFFFF;
+      --text: #1D3557;
+      --muted: rgba(29,53,87,.72);
+      --muted-2: rgba(29,53,87,.55);
+      --border: rgba(29,53,87,.14);
+      --shadow: 0 8px 24px rgba(29,53,87,.08);
+
+      --primary: #1D3557;   /* Navy */
+      --primary-weak: rgba(29,53,87,.10);
+
+      /* accento "neutro" coerente con logo, usato solo per stati OK */
+      --ok: #26A69A;        /* Teal */
+      --ok-weak: rgba(38,166,154,.16);
+
+      --warn: #FB8C00;      /* Orange */
+      --warn-weak: rgba(251,140,0,.16);
+
+      --bad: #E53935;       /* Red */
+      --bad-weak: rgba(229,57,53,.14);
+
+      --radius: 16px;
+      --radius-sm: 12px;
+    }
+
+    *{box-sizing:border-box}
+    html, body{height:100%}
+    body{
+      margin:0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    /* Header FR Color: logo + titolo tecnico */
+    .brandbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .brandleft{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width: 0;
+    }
+    .brandlogo{
+      width: 120px;
+      max-width: 38vw;
+      height:auto;
+      display:block;
+    }
+    .brandtitle{
+      min-width:0;
+    }
+    .brandtitle .title{
+      font-weight: 800;
+      letter-spacing: .2px;
+      font-size: 15px;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .brandtitle .sub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+
+    .status{
+      font-size: 12px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: #fff;
+      white-space: nowrap;
+    }
+    .status.ok{
+      color: var(--ok);
+      border-color: rgba(38,166,154,.35);
+      background: var(--ok-weak);
+    }
+    .status.warn{
+      color: var(--warn);
+      border-color: rgba(251,140,0,.35);
+      background: var(--warn-weak);
+    }
+
+    .grid{
+      margin-top: 12px;
+      display:grid;
+      gap: 12px;
+      grid-template-columns: 1.2fr .8fr;
+    }
+    @media (max-width: 900px){
+      .grid{grid-template-columns:1fr}
+      .brandbar{flex-wrap:wrap; justify-content:flex-start}
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow:hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .card h3{
+      margin:0;
+      padding: 12px 14px 10px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff, rgba(29,53,87,.02));
+    }
+    .card .body{
+      padding: 14px;
+    }
+
+    .viewer{
+      position: relative;
+      width:100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #0b0f14; /* area camera: scura, neutra */
+      aspect-ratio: 16/10;
+    }
+    video{width:100%; height:100%; object-fit:cover; display:block}
+    canvas{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .btn{
+      appearance:none;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .04s ease, background .12s ease, border-color .12s ease;
+    }
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn.primary:hover{background: #16304d}
+    .btn:hover{background: rgba(29,53,87,.04)}
+    .btn.small{padding: 8px 10px; font-size: 12px}
+
+    .btn.danger{
+      background: #fff;
+      color: var(--bad);
+      border-color: rgba(229,57,53,.35);
+    }
+    .btn.danger:hover{background: var(--bad-weak)}
+
+    .select, .input{
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      min-width: 180px;
+      font-weight: 700;
+    }
+    .select:focus, .input:focus{
+      border-color: rgba(30,136,229,.45); /* Blue ufficiale come focus */
+      box-shadow: 0 0 0 4px rgba(30,136,229,.14);
+    }
+
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 8px 0 0;
+    }
+
+    .sep{height:1px; background: var(--border); margin: 12px 0}
+
+    .pill{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: #fff;
+      font-weight: 800;
+    }
+    .pill.ok{
+      color: var(--ok);
+      border-color: rgba(38,166,154,.35);
+      background: var(--ok-weak);
+    }
+    .pill.bad{
+      color: var(--bad);
+      border-color: rgba(229,57,53,.35);
+      background: var(--bad-weak);
+    }
+
+    .result{
+      padding: 12px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+    }
+    .result .label{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: .15px;
+    }
+    .result strong{
+      display:block;
+      font-size: 17px;
+      margin-top: 4px;
+      letter-spacing: .2px;
+    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="brandbar">
+      <div class="brandleft">
+        <!-- Inserisci qui il logo ufficiale FR Color (PNG trasparente) -->
+        <!-- Esempio: src="assets/frcolor-logo.png" -->
+        <img class="brandlogo" id="brandLogo" src="" alt="FR Color — Logo ufficiale" />
+        <div class="brandtitle">
+          <p class="title">Misurazione (Modalità Compatibile)</p>
+          <div class="sub">
+            Fotocamera + calibrazione manuale. Indicativo: interni “pochi cm”, esterni 20–30 m stima.
+          </div>
+        </div>
+      </div>
+      <div id="statusBadge" class="status warn">Calibrazione: NON attiva</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Anteprima</h3>
+        <div class="body">
+          <div class="viewer">
+            <video id="video" playsinline muted></video>
+            <canvas id="overlay"></canvas>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="row">
+            <button id="btnStartCam" class="btn primary">Avvia fotocamera</button>
+            <button id="btnStopCam" class="btn">Ferma</button>
+            <span id="modePill" class="pill">Modalità: —</span>
+          </div>
+
+          <p class="hint">
+            Regola: se cambi zoom/lente o condizioni, rifai calibrazione. Evita lo zoom per misure più affidabili.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Controlli</h3>
+        <div class="body">
+
+          <div class="row">
+            <select id="mode" class="select">
+              <option value="calibrate">Calibrazione</option>
+              <option value="distance">Misura distanza</option>
+              <option value="area">Misura area (rettangolo)</option>
+            </select>
+
+            <select id="refPreset" class="select">
+              <option value="21">A4 lato corto (21 cm)</option>
+              <option value="29.7">A4 lato lungo (29.7 cm)</option>
+              <option value="8.56">Carta di credito (8.56 cm)</option>
+              <option value="custom">Valore manuale…</option>
+            </select>
+
+            <input id="refCustom" class="input" type="number" step="0.1" min="0" placeholder="cm (manuale)" style="display:none" />
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="row">
+            <button id="btnRecalibrate" class="btn small">Rifai calibrazione</button>
+            <button id="btnReset" class="btn small danger">Reset</button>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="result">
+            <div class="label">Risultato</div>
+            <strong id="resultMain">—</strong>
+            <div class="hint mono" id="resultDetails">Tocca i punti sul video per operare.</div>
+          </div>
+
+          <div class="sep"></div>
+
+          <p class="hint">
+            <span class="mono">Calibrazione</span>: tocca 2 punti sul riferimento inquadrato (es. lato A4).
+            Poi passa a <span class="mono">Misura distanza</span> o <span class="mono">Misura area</span>.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/**
+ * FRColorMeasureModule
+ * - Modulo isolato: non tocca dati esterni, salva solo calibrazione in localStorage.
+ * - Non dipende da WebXR/ARCore. Usa solo getUserMedia + tap su overlay.
+ */
+const FRColorMeasureModule = (() => {
+  const LS_KEY = "frcolor_measure_calibration_v1";
+
+  /** @type {HTMLVideoElement} */
+  let video;
+  /** @type {HTMLCanvasElement} */
+  let canvas;
+  /** @type {CanvasRenderingContext2D} */
+  let ctx;
+
+  let stream = null;
+
+  // state
+  let mode = "calibrate"; // calibrate | distance | area
+  let taps = []; // points in canvas pixel coords (CSS coords)
+  let cmPerPx = null; // number
+  let calibrationMeta = null;
+
+  // UI
+  let elStatusBadge, elMode, elModePill, elRefPreset, elRefCustom;
+  let elResultMain, elResultDetails;
+
+  function nowISO() { return new Date().toISOString(); }
+
+  function loadCalibration() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (typeof obj?.cmPerPx === "number" && obj.cmPerPx > 0) {
+        cmPerPx = obj.cmPerPx;
+        calibrationMeta = obj.meta || null;
+      }
+    } catch {}
+  }
+
+  function saveCalibration() {
+    const payload = {
+      cmPerPx,
+      meta: {
+        savedAt: nowISO(),
+        videoSettings: stream?.getVideoTracks?.()?.[0]?.getSettings?.() || null,
+        userAgent: navigator.userAgent
+      }
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    calibrationMeta = payload.meta;
+  }
+
+  function clearCalibration() {
+    localStorage.removeItem(LS_KEY);
+    cmPerPx = null;
+    calibrationMeta = null;
+  }
+
+  function setStatus() {
+    if (!elStatusBadge) return;
+    if (cmPerPx) {
+      elStatusBadge.className = "status ok";
+      const when = calibrationMeta?.savedAt ? calibrationMeta.savedAt.split("T")[0] : "—";
+      elStatusBadge.textContent = `Calibrazione: attiva (${when})`;
+    } else {
+      elStatusBadge.className = "status warn";
+      elStatusBadge.textContent = "Calibrazione: NON attiva";
+    }
+  }
+
+  function setMode(newMode) {
+    mode = newMode;
+    taps = [];
+    redraw();
+    updateModePill();
+    setResult("—", "Tocca i punti sul video per operare.");
+  }
+
+  function updateModePill() {
+    if (!elModePill) return;
+    const label = mode === "calibrate" ? "Calibrazione" : (mode === "distance" ? "Distanza" : "Area");
+    elModePill.textContent = `Modalità: ${label}`;
+    elModePill.className = "pill " + (cmPerPx ? "ok" : "bad");
+  }
+
+  function setResult(main, details) {
+    elResultMain.textContent = main;
+    elResultDetails.textContent = details;
+  }
+
+  async function startCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setResult("Errore", "Browser non supporta getUserMedia.");
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      resizeCanvasToDisplay();
+      redraw();
+      setResult("Camera OK", "Seleziona modalità e tocca i punti sul video.");
+    } catch (e) {
+      setResult("Camera non avviata", `${e.name || "Errore"}: ${e.message || ""}`.trim());
+    }
+  }
+
+  function stopCamera() {
+    try {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    } catch {}
+    stream = null;
+    video.srcObject = null;
+    setResult("Camera fermata", "Riavvia fotocamera quando serve.");
+  }
+
+  function getReferenceCm() {
+    const preset = elRefPreset.value;
+    if (preset === "custom") {
+      const v = parseFloat(elRefCustom.value);
+      return (Number.isFinite(v) && v > 0) ? v : null;
+    }
+    const n = parseFloat(preset);
+    return (Number.isFinite(n) && n > 0) ? n : null;
+  }
+
+  function resizeCanvasToDisplay() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr); // disegno in coordinate CSS
+  }
+
+  function canvasPointFromEvent(evt) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+  }
+
+  function distPx(a, b) {
+    const dx = a.x - b.x, dy = a.y - b.y;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function formatDistance(cm) {
+    if (cm >= 100) return (cm/100).toFixed(2) + " m";
+    return cm.toFixed(1) + " cm";
+  }
+
+  function formatAreaMq(cm2) {
+    const mq = cm2 / 10000;
+    return mq.toFixed(2) + " m²";
+  }
+
+  function handleTap(pt) {
+    if (!stream) {
+      setResult("Avvia la fotocamera", "Prima avvia la fotocamera, poi tocca i punti.");
+      return;
+    }
+
+    taps.push(pt);
+
+    if (mode === "calibrate") {
+      if (taps.length === 2) {
+        const refCm = getReferenceCm();
+        if (!refCm) {
+          taps = [];
+          redraw();
+          setResult("Calibrazione", "Inserisci un valore valido (cm) e riprova.");
+          return;
+        }
+        const px = distPx(taps[0], taps[1]);
+        if (!(px > 0)) {
+          taps = [];
+          redraw();
+          setResult("Calibrazione", "Distanza non valida. Riprova.");
+          return;
+        }
+        cmPerPx = refCm / px;
+        saveCalibration();
+        setStatus();
+        updateModePill();
+        setResult("Calibrato ✅", `Rapporto: ${(cmPerPx).toExponential(3)} cm/px — Puoi misurare.`);
+        taps = [];
+        redraw();
+      } else {
+        setResult("Calibrazione", "Tocca 2 punti sul riferimento (es. lato A4).");
+      }
+      return;
+    }
+
+    if (!cmPerPx) {
+      taps = [];
+      redraw();
+      setResult("Calibrazione richiesta", "Prima calibra (Modalità Calibrazione).");
+      return;
+    }
+
+    if (mode === "distance") {
+      if (taps.length === 2) {
+        const cm = distPx(taps[0], taps[1]) * cmPerPx;
+        setResult("Distanza", `${formatDistance(cm)} (indicativa)`);
+        taps = [];
+        redraw();
+      } else {
+        setResult("Distanza", "Tocca 2 punti per misurare.");
+      }
+      return;
+    }
+
+    if (mode === "area") {
+      if (taps.length === 2) {
+        const cmW = distPx(taps[0], taps[1]) * cmPerPx;
+        setResult("Area", `Larghezza: ${formatDistance(cmW)} — Ora tocca 2 punti per l’altezza.`);
+      }
+      if (taps.length === 4) {
+        const cmW = distPx(taps[0], taps[1]) * cmPerPx;
+        const cmH = distPx(taps[2], taps[3]) * cmPerPx;
+        setResult("Area (rettangolo)", `${formatAreaMq(cmW * cmH)} (indicativa)`);
+        taps = [];
+        redraw();
+      }
+      if (taps.length === 1) setResult("Area", "Tocca 2 punti per larghezza.");
+      if (taps.length === 3) setResult("Area", "Tocca 2 punti per altezza.");
+      return;
+    }
+  }
+
+  function redraw() {
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    /* overlay coerente: bianco pulito, tecnico */
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(245,245,247,.95)";
+    ctx.fillStyle = "rgba(245,245,247,.95)";
+
+    if (taps.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(taps[0].x, taps[0].y);
+      ctx.lineTo(taps[1].x, taps[1].y);
+      ctx.stroke();
+    }
+    if (mode === "area" && taps.length >= 4) {
+      ctx.beginPath();
+      ctx.moveTo(taps[2].x, taps[2].y);
+      ctx.lineTo(taps[3].x, taps[3].y);
+      ctx.stroke();
+    }
+
+    taps.forEach((p, i) => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
+      ctx.fill();
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+      ctx.fillText(String(i+1), p.x + 10, p.y - 10);
+    });
+  }
+
+  function wireUI() {
+    document.getElementById("btnStartCam").addEventListener("click", startCamera);
+    document.getElementById("btnStopCam").addEventListener("click", stopCamera);
+
+    elMode.addEventListener("change", () => setMode(elMode.value));
+
+    elRefPreset.addEventListener("change", () => {
+      elRefCustom.style.display = (elRefPreset.value === "custom") ? "inline-block" : "none";
+    });
+
+    document.getElementById("btnRecalibrate").addEventListener("click", () => {
+      setMode("calibrate");
+      elMode.value = "calibrate";
+      setResult("Calibrazione", "Tocca 2 punti sul riferimento.");
+    });
+
+    document.getElementById("btnReset").addEventListener("click", () => {
+      clearCalibration();
+      setStatus();
+      updateModePill();
+      taps = [];
+      redraw();
+      setResult("Reset", "Calibrazione cancellata. Rifai calibrazione quando vuoi.");
+    });
+
+    const onPointer = (evt) => {
+      evt.preventDefault();
+      handleTap(canvasPointFromEvent(evt));
+      redraw();
+    };
+    canvas.addEventListener("pointerdown", onPointer);
+
+    window.addEventListener("resize", () => {
+      resizeCanvasToDisplay();
+      redraw();
+    });
+  }
+
+  function init() {
+    video = document.getElementById("video");
+    canvas = document.getElementById("overlay");
+    ctx = canvas.getContext("2d");
+
+    elStatusBadge = document.getElementById("statusBadge");
+    elMode = document.getElementById("mode");
+    elModePill = document.getElementById("modePill");
+    elRefPreset = document.getElementById("refPreset");
+    elRefCustom = document.getElementById("refCustom");
+    elResultMain = document.getElementById("resultMain");
+    elResultDetails = document.getElementById("resultDetails");
+
+    loadCalibration();
+    setStatus();
+    updateModePill();
+
+    requestAnimationFrame(() => {
+      resizeCanvasToDisplay();
+      redraw();
+    });
+
+    wireUI();
+
+    if (!cmPerPx) {
+      setResult("Pronto", "Avvia fotocamera → Calibra (2 tap) → Misura.");
+    } else {
+      setResult("Pronto ✅", "Calibrazione presente. Puoi misurare subito o rifare calibrazione.");
+    }
+
+    /* Se non hai ancora messo il logo, non rompo nulla: resta vuoto */
+    const logo = document.getElementById("brandLogo");
+    if (logo && !logo.getAttribute("src")) {
+      logo.style.display = "none";
+    }
+  }
+
+  return { init };
+})();
+
+document.addEventListener("DOMContentLoaded", () => {
+  FRColorMeasureModule.init();
+});
+</script>
+</body>
+</html>

@@ -1,10 +1,11 @@
 
+
 <!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>FR Color — Misurazione (Compatibile)</title>
+  <title>FR Color — Misure (Compatibile)</title>
 
   <style>
     :root{
@@ -65,9 +66,7 @@
       gap:12px;
       grid-template-columns: 1.2fr .8fr;
     }
-    @media (max-width: 900px){
-      .grid{grid-template-columns:1fr}
-    }
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
 
     .card{
       border:1px solid var(--border);
@@ -111,7 +110,6 @@
     }
 
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-
     .btn{
       appearance:none;
       border:1px solid var(--border);
@@ -121,7 +119,7 @@
       border-radius:var(--radius-sm);
       font-weight:800;
       cursor:pointer;
-      transition: transform .04s ease, background .12s ease, border-color .12s ease;
+      transition: transform .04s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
     }
     .btn:active{transform:translateY(1px)}
     .btn.primary{background:var(--primary); border-color:var(--primary); color:#fff;}
@@ -130,7 +128,7 @@
     .btn.small{padding:8px 10px; font-size:12px}
     .btn.danger{background:#fff; color:var(--bad); border-color:rgba(229,57,53,.35);}
     .btn.danger:hover{background:var(--bad-weak)}
-
+    .btn:disabled{opacity:.45; cursor:not-allowed}
     .select, .input{
       border:1px solid var(--border);
       background:#fff;
@@ -140,11 +138,13 @@
       outline:none;
       min-width: 180px;
       font-weight:700;
+      transition: opacity .12s ease;
     }
     .select:focus, .input:focus{
       border-color: rgba(30,136,229,.45);
       box-shadow: 0 0 0 4px rgba(30,136,229,.14);
     }
+    .select:disabled, .input:disabled{opacity:.45; cursor:not-allowed}
 
     .hint{color:var(--muted); font-size:12px; line-height:1.4; margin:8px 0 0;}
     .sep{height:1px; background:var(--border); margin:12px 0}
@@ -163,12 +163,15 @@
     .result strong{display:block; font-size:17px; margin-top:4px; letter-spacing:.2px;}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace}
 
-    /* mirino */
+    /* mirino (opzionale) */
     .crosshair{
       position:absolute;
       inset:0;
       pointer-events:none;
+      opacity: 0; /* default OFF: preferito dito */
+      transition: opacity .12s ease;
     }
+    .crosshair.on{opacity:1;}
     .crosshair::before, .crosshair::after{
       content:"";
       position:absolute;
@@ -182,9 +185,69 @@
     .crosshair::before{ width: 34px; height: 2px; }
     .crosshair::after{ width: 2px; height: 34px; }
 
-    /* fullscreen viewer */
+    /* fullscreen */
     .viewer:fullscreen{width:100vw; height:100vh; border-radius:0; border:0;}
     .viewer:-webkit-full-screen{width:100vw; height:100vh; border-radius:0; border:0;}
+
+    /* accordion */
+    details{
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      padding: 10px 12px;
+    }
+    details + details{margin-top:10px}
+    summary{
+      cursor:pointer;
+      list-style:none;
+      font-weight: 900;
+      letter-spacing:.15px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      user-select:none;
+    }
+    summary::-webkit-details-marker{display:none}
+    .sum-right{display:flex; align-items:center; gap:8px}
+    .tag{
+      font-size:12px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      color:var(--muted);
+      background:#fff;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .tag.ok{color:var(--ok); border-color:rgba(38,166,154,.35); background:var(--ok-weak);}
+    .tag.bad{color:var(--bad); border-color:rgba(229,57,53,.35); background:var(--bad-weak);}
+
+    /* storico misure */
+    .history{
+      border:1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding:10px 12px;
+      background:#fff;
+    }
+    .history-head{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:8px;
+    }
+    .history-list{
+      margin:0;
+      padding-left: 18px;
+      color: var(--text);
+      font-weight: 800;
+    }
+    .history-list li{
+      margin: 6px 0;
+      font-weight: 800;
+    }
+    .history-meta{
+      font-size:12px; color:var(--muted);
+      font-weight:800;
+    }
   </style>
 </head>
 
@@ -192,11 +255,10 @@
   <div class="wrap">
     <div class="brandbar">
       <div class="brandleft">
-        <!-- logo FR Color (opzionale qui: se src vuoto lo nascondo) -->
         <img class="brandlogo" id="brandLogo" src="" alt="FR Color — Logo ufficiale" />
         <div class="brandtitle">
-          <p class="title">Misurazione (Modalità Compatibile)</p>
-          <div class="sub">Fotocamera + calibrazione manuale. Modalità Distanza con “laser” live.</div>
+          <p class="title">Misure Cantiere (Compatibile)</p>
+          <div class="sub">Distanza (dito o mirino) + Area. Calibrazione separata.</div>
         </div>
       </div>
       <div id="statusBadge" class="status warn">Calibrazione: NON attiva</div>
@@ -204,12 +266,12 @@
 
     <div class="grid">
       <div class="card">
-        <h3>Anteprima</h3>
+        <h3>Schermo Misurazione</h3>
         <div class="body">
           <div class="viewer" id="viewer">
             <video id="video" playsinline muted></video>
             <canvas id="overlay"></canvas>
-            <div class="crosshair" aria-hidden="true"></div>
+            <div id="crosshair" class="crosshair" aria-hidden="true"></div>
           </div>
 
           <div class="sep"></div>
@@ -222,7 +284,7 @@
           </div>
 
           <p class="hint">
-            Distanza: tap 1 = punto A, muovi e leggi la misura live, tap 2 = punto B (blocca).
+            Distanza: tap A → trascina col dito per B (live) → tap finale blocca e salva.
           </p>
         </div>
       </div>
@@ -231,30 +293,84 @@
         <h3>Controlli</h3>
         <div class="body">
 
-          <div class="row">
-            <select id="mode" class="select">
-              <option value="calibrate">Calibrazione</option>
-              <option value="distance">Misura distanza (laser)</option>
-              <option value="area">Misura area (rettangolo)</option>
-            </select>
+          <!-- CALIBRAZIONE (accordion) -->
+          <details id="calPanel" open>
+            <summary>
+              <span>Calibrazione</span>
+              <span class="sum-right">
+                <span id="calTag" class="tag bad">NON attiva</span>
+              </span>
+            </summary>
 
-            <select id="refPreset" class="select">
-              <option value="21">A4 lato corto (21 cm)</option>
-              <option value="29.7">A4 lato lungo (29.7 cm)</option>
-              <option value="8.56">Carta di credito (8.56 cm)</option>
-              <option value="custom">Valore manuale…</option>
-            </select>
+            <div class="sep"></div>
 
-            <input id="refCustom" class="input" type="number" step="0.1" min="0" placeholder="cm (manuale)" style="display:none" />
-          </div>
+            <div class="row">
+              <select id="refPreset" class="select">
+                <option value="21">A4 lato corto (21 cm)</option>
+                <option value="29.7">A4 lato lungo (29.7 cm)</option>
+                <option value="8.56">Carta di credito (8.56 cm)</option>
+                <option value="custom">Valore manuale…</option>
+              </select>
 
-          <div class="sep"></div>
+              <input id="refCustom" class="input" type="number" step="0.1" min="0" placeholder="cm (manuale)" style="display:none" />
+            </div>
 
-          <div class="row">
-            <button id="btnRecalibrate" class="btn small">Rifai calibrazione</button>
-            <button id="btnReset" class="btn small danger">Reset calibrazione</button>
-            <button id="btnClearMeasure" class="btn small">Azzera misura</button>
-          </div>
+            <div class="sep"></div>
+
+            <div class="row">
+              <button id="btnModeCal" class="btn small primary">Modalità calibrazione</button>
+              <button id="btnResetCal" class="btn small danger">Reset calibrazione</button>
+            </div>
+
+            <p class="hint">
+              In calibrazione: 2 tap sul riferimento. In misure: pannello calibrazione chiuso e inattivo.
+            </p>
+          </details>
+
+          <!-- MISURE CANTIERE (accordion) -->
+          <details id="msrPanel" open>
+            <summary>
+              <span>Misure cantiere</span>
+              <span class="sum-right">
+                <span id="msrTag" class="tag">PRONTO</span>
+              </span>
+            </summary>
+
+            <div class="sep"></div>
+
+            <div class="row">
+              <select id="mode" class="select">
+                <option value="distance">Distanza</option>
+                <option value="area">Area (rettangolo)</option>
+              </select>
+
+              <select id="targetMode" class="select">
+                <option value="finger" selected>Puntamento B: Dito</option>
+                <option value="crosshair">Puntamento B: Mirino</option>
+              </select>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row">
+              <button id="btnClearMeasure" class="btn small">Azzera misura</button>
+              <button id="btnClearHistory" class="btn small danger">Azzera storico</button>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="history">
+              <div class="history-head">
+                <div class="history-meta" id="historyMeta">Storico misure: 0/10</div>
+                <div class="history-meta" id="historyNote">Reset automatico alla 11ª</div>
+              </div>
+              <ol class="history-list" id="historyList"></ol>
+            </div>
+
+            <p class="hint">
+              Area: 2 tap larghezza + 2 tap altezza. Distanza: tap A, trascina B, tap finale blocca e salva.
+            </p>
+          </details>
 
           <div class="sep"></div>
 
@@ -264,37 +380,57 @@
             <div class="hint mono" id="resultDetails">—</div>
           </div>
 
-          <div class="sep"></div>
-
-          <p class="hint">
-            Area: 2 tap larghezza + 2 tap altezza (come prima). Distanza: “laser” live tra punto A e mirino.
-          </p>
         </div>
       </div>
     </div>
   </div>
 
 <script>
+/**
+ * FRColorMeasureModule
+ * - Modalità operative:
+ *   CALIBRAZIONE: 2 tap sul riferimento -> cmPerPx salvato.
+ *   MISURE: distanza (dito/mirino) + area (rettangolo).
+ * - Separazione pannelli:
+ *   quando entri in MISURE -> pannello calibrazione CHIUSO e controlli DISABILITATI.
+ *   quando entri in CALIBRAZIONE -> pannello misure resta, ma la canvas opera in calibrazione.
+ * - Storico: massimo 10, alla 11a reset totale.
+ */
 const FRColorMeasureModule = (() => {
   const LS_KEY = "frcolor_measure_calibration_v1";
 
-  let video, canvas, ctx, viewer;
+  let video, canvas, ctx, viewer, crosshairEl;
   let stream = null;
 
-  // state
-  let mode = "calibrate"; // calibrate | distance | area
-  let taps = [];          // usato per area + calibrazione
+  // modes
+  let appMode = "measure"; // "calibrate" | "measure"
+  let measureMode = "distance"; // "distance" | "area"
+  let targetMode = "finger"; // "finger" | "crosshair"
+
+  // calibration
   let cmPerPx = null;
   let calibrationMeta = null;
+  let calTaps = [];
 
-  // distanza laser
-  let anchorA = null;     // punto A fissato con tap1 (in coordinate CSS)
-  let lockedB = null;     // punto B bloccato con tap2 (in coordinate CSS)
-  let rafId = null;
+  // distance (laser)
+  let anchorA = null;     // punto A (tap)
+  let liveB = null;       // punto B live (dito o mirino)
+  let lockedB = null;     // punto B finale
+  let isDragging = false;
 
+  // area
+  let areaTaps = [];      // 4 tap
+
+  // history (10 reset)
+  let history = []; // { type, valueText }
   // UI
-  let elStatusBadge, elMode, elModePill, elRefPreset, elRefCustom;
+  let elStatusBadge, elModePill;
   let elResultMain, elResultDetails;
+
+  let elCalPanel, elMsrPanel, elCalTag, elMsrTag;
+  let elRefPreset, elRefCustom;
+  let elMeasureMode, elTargetMode;
+  let elHistoryList, elHistoryMeta;
 
   function nowISO(){ return new Date().toISOString(); }
 
@@ -330,94 +466,33 @@ const FRColorMeasureModule = (() => {
   }
 
   function setStatus() {
-    if (!elStatusBadge) return;
     if (cmPerPx) {
       elStatusBadge.className = "status ok";
       const when = calibrationMeta?.savedAt ? calibrationMeta.savedAt.split("T")[0] : "—";
       elStatusBadge.textContent = `Calibrazione: attiva (${when})`;
+
+      elCalTag.className = "tag ok";
+      elCalTag.textContent = "ATTIVA";
     } else {
       elStatusBadge.className = "status warn";
       elStatusBadge.textContent = "Calibrazione: NON attiva";
+
+      elCalTag.className = "tag bad";
+      elCalTag.textContent = "NON attiva";
     }
   }
 
-  function updateModePill() {
-    const label = mode === "calibrate" ? "Calibrazione"
-      : (mode === "distance" ? "Distanza" : "Area");
+  function setModePill() {
+    const label = (appMode === "calibrate")
+      ? "Calibrazione"
+      : (measureMode === "distance" ? "Distanza" : "Area");
     elModePill.textContent = `Modalità: ${label}`;
     elModePill.className = "pill " + (cmPerPx ? "ok" : "bad");
   }
 
   function setResult(main, details) {
     elResultMain.textContent = main;
-    elResultDetails.textContent = details || "";
-  }
-
-  function resetTaps() {
-    taps = [];
-    redraw();
-  }
-
-  function clearLaserMeasure() {
-    anchorA = null;
-    lockedB = null;
-    stopLiveLoop();
-    redraw();
-    setResult("—", "—");
-  }
-
-  function setMode(newMode) {
-    mode = newMode;
-    resetTaps();
-    clearLaserMeasure();
-    updateModePill();
-    if (mode === "calibrate") setResult("—", "Calibrazione: 2 tap sul riferimento.");
-    if (mode === "distance") setResult("—", "Distanza: tap A, muovi (live), tap B per bloccare.");
-    if (mode === "area") setResult("—", "Area: 2 tap larghezza + 2 tap altezza.");
-  }
-
-  async function startCamera() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setResult("Errore", "Browser non supporta getUserMedia.");
-      return;
-    }
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
-      video.srcObject = stream;
-      await video.play();
-      resizeCanvasToDisplay();
-      redraw();
-      setResult("Camera OK", "Seleziona modalità e inizia.");
-    } catch (e) {
-      setResult("Camera non avviata", `${e.name || "Errore"}: ${e.message || ""}`.trim());
-    }
-  }
-
-  function stopCamera() {
-    try { if (stream) stream.getTracks().forEach(t => t.stop()); } catch {}
-    stream = null;
-    video.srcObject = null;
-    stopLiveLoop();
-    setResult("Camera fermata", "—");
-  }
-
-  function enterFullscreen() {
-    const el = viewer;
-    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-    if (req) req.call(el);
-  }
-
-  function getReferenceCm() {
-    const preset = elRefPreset.value;
-    if (preset === "custom") {
-      const v = parseFloat(elRefCustom.value);
-      return (Number.isFinite(v) && v > 0) ? v : null;
-    }
-    const n = parseFloat(preset);
-    return (Number.isFinite(n) && n > 0) ? n : null;
+    elResultDetails.textContent = details || "—";
   }
 
   function resizeCanvasToDisplay() {
@@ -435,7 +510,6 @@ const FRColorMeasureModule = (() => {
   }
 
   function getCrosshairPoint() {
-    // punto B live = centro del canvas in coordinate CSS
     const rect = canvas.getBoundingClientRect();
     return { x: rect.width / 2, y: rect.height / 2 };
   }
@@ -455,186 +529,155 @@ const FRColorMeasureModule = (() => {
     return mq.toFixed(2) + " m²";
   }
 
-  function stopLiveLoop() {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = null;
+  function getReferenceCm() {
+    const preset = elRefPreset.value;
+    if (preset === "custom") {
+      const v = parseFloat(elRefCustom.value);
+      return (Number.isFinite(v) && v > 0) ? v : null;
+    }
+    const n = parseFloat(preset);
+    return (Number.isFinite(n) && n > 0) ? n : null;
   }
 
-  function startLiveLoop() {
-    stopLiveLoop();
-    const loop = () => {
-      if (mode !== "distance" || !anchorA || !cmPerPx || lockedB) {
-        rafId = null;
-        return;
-      }
-      const liveB = getCrosshairPoint();
-      const cm = distPx(anchorA, liveB) * cmPerPx;
-      // misura live vicino alla linea: render in redraw + testo qui
-      setResult("Distanza (live)", `${formatDistance(cm)} (indicativa)`);
-      redraw(liveB, cm);
-      rafId = requestAnimationFrame(loop);
-    };
-    rafId = requestAnimationFrame(loop);
+  function setCrosshairVisible(on) {
+    if (on) crosshairEl.classList.add("on");
+    else crosshairEl.classList.remove("on");
   }
 
-  function handleTap(pt) {
-    if (!stream) {
-      setResult("Avvia la fotocamera", "Prima avvia la fotocamera.");
-      return;
+  function updatePanelsState() {
+    // A: quando entri in MISURE -> calibrazione chiusa e inattiva
+    const inCal = (appMode === "calibrate");
+
+    if (!inCal) {
+      elCalPanel.open = false;     // chiude calibrazione
+    } else {
+      elCalPanel.open = true;      // apre calibrazione
     }
 
-    // CALIBRAZIONE
-    if (mode === "calibrate") {
-      taps.push(pt);
+    // disabilita controlli calibrazione quando NON sei in calibrazione
+    const calDisabled = !inCal;
+    elRefPreset.disabled = calDisabled;
+    elRefCustom.disabled = calDisabled;
+    document.getElementById("btnResetCal").disabled = calDisabled;
 
-      if (taps.length === 1) {
-        setResult("Calibrazione", "Tocca il secondo punto.");
-        redraw();
-        return;
-      }
-      if (taps.length === 2) {
-        const refCm = getReferenceCm();
-        if (!refCm) {
-          resetTaps();
-          setResult("Calibrazione", "Valore cm non valido.");
-          return;
-        }
-        const px = distPx(taps[0], taps[1]);
-        if (!(px > 0)) {
-          resetTaps();
-          setResult("Calibrazione", "Distanza non valida.");
-          return;
-        }
-        cmPerPx = refCm / px;
-        saveCalibration();
-        setStatus();
-        updateModePill();
-        setResult("Calibrato ✅", `Rapporto: ${cmPerPx.toExponential(3)} cm/px`);
-        resetTaps();
-        return;
-      }
-      resetTaps();
+    // tag misure
+    elMsrTag.className = "tag";
+    elMsrTag.textContent = "PRONTO";
+
+    // mirino visibile solo se targetMode = crosshair (in misure distanza)
+    setCrosshairVisible(appMode === "measure" && measureMode === "distance" && targetMode === "crosshair");
+  }
+
+  function enterCalibrationMode() {
+    appMode = "calibrate";
+    // reset states
+    clearMeasureState();
+    calTaps = [];
+    areaTaps = [];
+    setResult("Calibrazione", "2 tap sul riferimento");
+    setModePill();
+    updatePanelsState();
+    redraw();
+  }
+
+  function enterMeasureMode() {
+    appMode = "measure";
+    // reset calib taps
+    calTaps = [];
+    setModePill();
+    updatePanelsState();
+    redraw();
+  }
+
+  function clearMeasureState() {
+    anchorA = null;
+    liveB = null;
+    lockedB = null;
+    isDragging = false;
+    areaTaps = [];
+  }
+
+  function updateHistoryUI() {
+    elHistoryList.innerHTML = "";
+    history.forEach((h) => {
+      const li = document.createElement("li");
+      li.textContent = h.valueText;
+      elHistoryList.appendChild(li);
+    });
+    elHistoryMeta.textContent = `Storico misure: ${history.length}/10`;
+  }
+
+  function addToHistory(valueText) {
+    // reset totale alla 11a misura
+    if (history.length === 10) history = [];
+    history.push({ valueText });
+    updateHistoryUI();
+  }
+
+  async function startCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setResult("Errore", "Browser non supporta getUserMedia.");
       return;
     }
-
-    // per misure serve calibrazione
-    if (!cmPerPx) {
-      setResult("Calibrazione richiesta", "Passa a Calibrazione e calibra prima.");
-      return;
-    }
-
-    // DISTANZA LASER (tap A / tap B)
-    if (mode === "distance") {
-      if (!anchorA) {
-        anchorA = pt;     // tap 1 = A
-        lockedB = null;
-        setResult("Distanza (live)", "—");
-        startLiveLoop();
-        redraw();
-        return;
-      }
-
-      if (anchorA && !lockedB) {
-        // tap 2 = blocca B dove stai mirando (crosshair)
-        lockedB = getCrosshairPoint();
-        stopLiveLoop();
-
-        const cm = distPx(anchorA, lockedB) * cmPerPx;
-        setResult("Distanza", `${formatDistance(cm)} (indicativa)`);
-        redraw(null, cm); // disegna laser bloccato
-        return;
-      }
-
-      // tap successivo: riparti
-      anchorA = pt;
-      lockedB = null;
-      setResult("Distanza (live)", "—");
-      startLiveLoop();
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+      resizeCanvasToDisplay();
       redraw();
-      return;
+      setResult("Camera OK", "—");
+    } catch (e) {
+      setResult("Camera non avviata", `${e.name || "Errore"}: ${e.message || ""}`.trim());
     }
+  }
 
-    // AREA (come prima)
-    if (mode === "area") {
-      taps.push(pt);
+  function stopCamera() {
+    try { if (stream) stream.getTracks().forEach(t => t.stop()); } catch {}
+    stream = null;
+    video.srcObject = null;
+    setResult("Camera fermata", "—");
+    redraw();
+  }
 
-      if (taps.length === 1) {
-        setResult("Area", "Tocca il secondo punto per la larghezza.");
-        redraw();
-        return;
-      }
-      if (taps.length === 2) {
-        const cmW = distPx(taps[0], taps[1]) * cmPerPx;
-        setResult("Area", `Larghezza: ${formatDistance(cmW)} — Ora 2 tap per altezza.`);
-        redraw();
-        return;
-      }
-      if (taps.length === 3) {
-        setResult("Area", "Tocca il secondo punto per l’altezza.");
-        redraw();
-        return;
-      }
-      if (taps.length === 4) {
-        const cmW = distPx(taps[0], taps[1]) * cmPerPx;
-        const cmH = distPx(taps[2], taps[3]) * cmPerPx;
-        setResult("Area (rettangolo)", `${formatAreaMq(cmW * cmH)} (indicativa)`);
-        resetTaps();
-        return;
-      }
-
-      resetTaps();
-      return;
-    }
+  function enterFullscreen() {
+    const req = viewer.requestFullscreen || viewer.webkitRequestFullscreen || viewer.msRequestFullscreen;
+    if (req) req.call(viewer);
   }
 
   function drawLabelOnLine(a, b, text) {
-    // posizione a metà linea, leggermente offset
     const midX = (a.x + b.x) / 2;
     const midY = (a.y + b.y) / 2;
-
     ctx.save();
     ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "rgba(245,245,247,.95)";
     ctx.strokeStyle = "rgba(11,15,20,.35)";
     ctx.lineWidth = 4;
-
-    const padX = 8, padY = 6;
-    const w = ctx.measureText(text).width;
-    const x = midX + 10;
-    const y = midY - 10;
-
-    // “etichetta” semplice
-    ctx.strokeText(text, x, y);
-    ctx.fillText(text, x, y);
+    ctx.strokeText(text, midX + 10, midY - 10);
+    ctx.fillText(text, midX + 10, midY - 10);
     ctx.restore();
   }
 
-  function redraw(liveBOverride=null, liveCm=null) {
+  function redraw() {
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    // overlay tecnico pulito
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(245,245,247,.95)";
     ctx.fillStyle = "rgba(245,245,247,.95)";
 
-    // CALIBRAZIONE/AREA: disegna linee tap
-    if (mode === "calibrate" || mode === "area") {
-      if (taps.length >= 2) {
+    // CALIBRAZIONE: linee + punti
+    if (appMode === "calibrate") {
+      if (calTaps.length >= 2) {
         ctx.beginPath();
-        ctx.moveTo(taps[0].x, taps[0].y);
-        ctx.lineTo(taps[1].x, taps[1].y);
+        ctx.moveTo(calTaps[0].x, calTaps[0].y);
+        ctx.lineTo(calTaps[1].x, calTaps[1].y);
         ctx.stroke();
       }
-      if (mode === "area" && taps.length >= 4) {
-        ctx.beginPath();
-        ctx.moveTo(taps[2].x, taps[2].y);
-        ctx.lineTo(taps[3].x, taps[3].y);
-        ctx.stroke();
-      }
-
-      taps.forEach((p, i) => {
+      calTaps.forEach((p, i) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
         ctx.fill();
@@ -644,11 +687,11 @@ const FRColorMeasureModule = (() => {
       return;
     }
 
-    // DISTANZA LASER
-    if (mode === "distance" && anchorA) {
-      const b = lockedB || liveBOverride || getCrosshairPoint();
+    // MISURE: DISTANZA (laser)
+    if (appMode === "measure" && measureMode === "distance" && anchorA) {
+      const b = lockedB || liveB || (targetMode === "crosshair" ? getCrosshairPoint() : null);
+      if (!b) return;
 
-      // linea “laser” tratteggiata
       ctx.save();
       ctx.setLineDash([10, 8]);
       ctx.beginPath();
@@ -662,49 +705,287 @@ const FRColorMeasureModule = (() => {
       ctx.arc(anchorA.x, anchorA.y, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      // etichetta misura vicino alla linea
       if (cmPerPx) {
-        const cm = (typeof liveCm === "number" && !lockedB) ? liveCm : (distPx(anchorA, b) * cmPerPx);
+        const cm = distPx(anchorA, b) * cmPerPx;
         drawLabelOnLine(anchorA, b, formatDistance(cm));
       }
+      return;
+    }
+
+    // MISURE: AREA (4 tap)
+    if (appMode === "measure" && measureMode === "area") {
+      if (areaTaps.length >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(areaTaps[0].x, areaTaps[0].y);
+        ctx.lineTo(areaTaps[1].x, areaTaps[1].y);
+        ctx.stroke();
+      }
+      if (areaTaps.length >= 4) {
+        ctx.beginPath();
+        ctx.moveTo(areaTaps[2].x, areaTaps[2].y);
+        ctx.lineTo(areaTaps[3].x, areaTaps[3].y);
+        ctx.stroke();
+      }
+      areaTaps.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillText(String(i + 1), p.x + 10, p.y - 10);
+      });
     }
   }
+
+  // =========================
+  // INPUT HANDLERS
+  // =========================
+
+  function handleTap(pt) {
+    if (!stream) { setResult("Avvia fotocamera", "—"); return; }
+
+    // CALIBRAZIONE
+    if (appMode === "calibrate") {
+      calTaps.push(pt);
+
+      if (calTaps.length === 1) {
+        setResult("Calibrazione", "Tocca il secondo punto");
+        redraw();
+        return;
+      }
+
+      if (calTaps.length === 2) {
+        const refCm = getReferenceCm();
+        if (!refCm) {
+          calTaps = [];
+          setResult("Calibrazione", "Valore cm non valido");
+          redraw();
+          return;
+        }
+        const px = distPx(calTaps[0], calTaps[1]);
+        if (!(px > 0)) {
+          calTaps = [];
+          setResult("Calibrazione", "Distanza non valida");
+          redraw();
+          return;
+        }
+        cmPerPx = refCm / px;
+        saveCalibration();
+        setStatus();
+        setModePill();
+        setResult("Calibrato ✅", `Rapporto: ${cmPerPx.toExponential(3)} cm/px`);
+        calTaps = [];
+        redraw();
+
+        // resta in calibrazione finché non esci tu
+        return;
+      }
+
+      calTaps = [];
+      redraw();
+      return;
+    }
+
+    // MISURE: richiede calibrazione
+    if (!cmPerPx) {
+      setResult("Calibrazione richiesta", "Passa a Calibrazione e calibra prima");
+      return;
+    }
+
+    // DISTANZA: tap A e tap finale (B bloccato)
+    if (measureMode === "distance") {
+      if (!anchorA) {
+        anchorA = pt;
+        lockedB = null;
+        // inizializza liveB in base al target
+        liveB = (targetMode === "crosshair") ? getCrosshairPoint() : pt;
+        setResult("Distanza (live)", "—");
+        redraw();
+        return;
+      }
+
+      if (anchorA && !lockedB) {
+        // tap finale -> blocca B (dito: ultimo liveB, mirino: centro)
+        lockedB = (targetMode === "crosshair") ? getCrosshairPoint() : (liveB || pt);
+        isDragging = false;
+
+        const cm = distPx(anchorA, lockedB) * cmPerPx;
+        const text = `${formatDistance(cm)} (indicativa)`;
+        setResult("Distanza", text);
+        addToHistory(`Distanza: ${text}`);
+        redraw();
+        return;
+      }
+
+      // tap successivo: riparti da nuovo A
+      anchorA = pt;
+      lockedB = null;
+      liveB = (targetMode === "crosshair") ? getCrosshairPoint() : pt;
+      setResult("Distanza (live)", "—");
+      redraw();
+      return;
+    }
+
+    // AREA: 4 tap
+    if (measureMode === "area") {
+      areaTaps.push(pt);
+
+      if (areaTaps.length === 1) {
+        setResult("Area", "Tocca il secondo punto per la larghezza");
+        redraw();
+        return;
+      }
+      if (areaTaps.length === 2) {
+        const cmW = distPx(areaTaps[0], areaTaps[1]) * cmPerPx;
+        setResult("Area", `Larghezza: ${formatDistance(cmW)} — Ora 2 tap per altezza`);
+        redraw();
+        return;
+      }
+      if (areaTaps.length === 3) {
+        setResult("Area", "Tocca il secondo punto per l’altezza");
+        redraw();
+        return;
+      }
+      if (areaTaps.length === 4) {
+        const cmW = distPx(areaTaps[0], areaTaps[1]) * cmPerPx;
+        const cmH = distPx(areaTaps[2], areaTaps[3]) * cmPerPx;
+        const areaText = `${formatAreaMq(cmW * cmH)} (indicativa)`;
+        setResult("Area (rettangolo)", areaText);
+        addToHistory(`Area: ${areaText}`);
+        areaTaps = [];
+        redraw();
+        return;
+      }
+
+      areaTaps = [];
+      redraw();
+      return;
+    }
+  }
+
+  // Drag (solo in misure distanza e target dito, tra tap A e tap B finale)
+  function handlePointerMove(evt) {
+    if (appMode !== "measure") return;
+    if (measureMode !== "distance") return;
+    if (targetMode !== "finger") return;
+    if (!anchorA) return;
+    if (lockedB) return;
+
+    if (!isDragging) return;
+
+    const pt = canvasPointFromEvent(evt);
+    liveB = pt;
+
+    const cm = distPx(anchorA, liveB) * cmPerPx;
+    setResult("Distanza (live)", `${formatDistance(cm)} (indicativa)`);
+    redraw();
+  }
+
+  function handlePointerDown(evt) {
+    if (appMode !== "measure") return;
+    if (measureMode !== "distance") return;
+    if (targetMode !== "finger") return;
+    if (!anchorA) return;
+    if (lockedB) return;
+
+    // inizia drag dopo tap A (per definire B live)
+    isDragging = true;
+    liveB = canvasPointFromEvent(evt);
+    redraw();
+  }
+
+  function handlePointerUp(evt) {
+    evt.preventDefault();
+
+    // TAP = pointerup sempre (stabile Android)
+    const pt = canvasPointFromEvent(evt);
+
+    // se siamo in misura distanza dito e stavamo trascinando, rilascia drag ma NON blocca misura:
+    // il blocco avviene col tap finale gestito da handleTap (secondo tap).
+    // Però pointerup è anche tap: quindi per evitare doppio evento, gestiamo così:
+    if (appMode === "measure" && measureMode === "distance" && targetMode === "finger" && isDragging) {
+      // termina drag (ma lascia liveB aggiornato)
+      isDragging = false;
+      // NON return: il pointerup deve comunque contare come "tap finale" solo se l'utente vuole.
+      // Quindi lasciamo che handleTap blocchi.
+    }
+
+    handleTap(pt);
+  }
+
+  // =========================
+  // UI WIRING
+  // =========================
 
   function wireUI() {
     document.getElementById("btnStartCam").addEventListener("click", startCamera);
     document.getElementById("btnStopCam").addEventListener("click", stopCamera);
     document.getElementById("btnFullscreen").addEventListener("click", enterFullscreen);
 
-    elMode.addEventListener("change", () => setMode(elMode.value));
+    document.getElementById("btnModeCal").addEventListener("click", () => {
+      enterCalibrationMode();
+    });
+
+    document.getElementById("btnResetCal").addEventListener("click", () => {
+      clearCalibration();
+      setStatus();
+      setModePill();
+      setResult("Reset calibrazione", "—");
+      redraw();
+    });
 
     elRefPreset.addEventListener("change", () => {
       elRefCustom.style.display = (elRefPreset.value === "custom") ? "inline-block" : "none";
     });
 
-    document.getElementById("btnRecalibrate").addEventListener("click", () => {
-      elMode.value = "calibrate";
-      setMode("calibrate");
+    elMeasureMode.addEventListener("change", () => {
+      measureMode = elMeasureMode.value;
+      // quando passi a misure, chiudi calibrazione e rendila inattiva (A)
+      enterMeasureMode();
+      clearMeasureState();
+      setModePill();
+      updatePanelsState();
+
+      if (measureMode === "distance") setResult("Distanza", "Tap A, poi trascina e tap finale");
+      else setResult("Area", "2 tap larghezza + 2 tap altezza");
+      redraw();
     });
 
-    document.getElementById("btnReset").addEventListener("click", () => {
-      clearCalibration();
-      setStatus();
-      updateModePill();
-      clearLaserMeasure();
-      resetTaps();
-      setResult("Reset", "Calibrazione cancellata.");
+    elTargetMode.addEventListener("change", () => {
+      targetMode = elTargetMode.value;
+      updatePanelsState();
+      clearMeasureState();
+      setResult("Distanza", targetMode === "finger" ? "Tap A, trascina e tap finale" : "Tap A, muovi e tap finale");
+      redraw();
     });
 
     document.getElementById("btnClearMeasure").addEventListener("click", () => {
-      clearLaserMeasure();
-    });
-
-    // pointerup più stabile su Android
-    canvas.addEventListener("pointerup", (evt) => {
-      evt.preventDefault();
-      handleTap(canvasPointFromEvent(evt));
+      clearMeasureState();
+      setResult("—", "—");
       redraw();
     });
+
+    document.getElementById("btnClearHistory").addEventListener("click", () => {
+      history = [];
+      updateHistoryUI();
+    });
+
+    // Se apri il pannello Misure, usiamo quello come "entrata in misure"
+    elMsrPanel.addEventListener("toggle", () => {
+      if (elMsrPanel.open && appMode !== "measure") {
+        enterMeasureMode();
+      }
+    });
+
+    // Canvas events
+    canvas.addEventListener("pointerdown", (evt) => {
+      evt.preventDefault();
+      handlePointerDown(evt);
+    });
+    canvas.addEventListener("pointermove", (evt) => {
+      evt.preventDefault();
+      handlePointerMove(evt);
+    });
+    canvas.addEventListener("pointerup", handlePointerUp);
 
     window.addEventListener("resize", () => {
       resizeCanvasToDisplay();
@@ -722,21 +1003,41 @@ const FRColorMeasureModule = (() => {
     canvas = document.getElementById("overlay");
     ctx = canvas.getContext("2d");
     viewer = document.getElementById("viewer");
+    crosshairEl = document.getElementById("crosshair");
 
     elStatusBadge = document.getElementById("statusBadge");
-    elMode = document.getElementById("mode");
     elModePill = document.getElementById("modePill");
-    elRefPreset = document.getElementById("refPreset");
-    elRefCustom = document.getElementById("refCustom");
     elResultMain = document.getElementById("resultMain");
     elResultDetails = document.getElementById("resultDetails");
 
+    elCalPanel = document.getElementById("calPanel");
+    elMsrPanel = document.getElementById("msrPanel");
+    elCalTag = document.getElementById("calTag");
+    elMsrTag = document.getElementById("msrTag");
+
+    elRefPreset = document.getElementById("refPreset");
+    elRefCustom = document.getElementById("refCustom");
+
+    elMeasureMode = document.getElementById("mode");
+    elTargetMode = document.getElementById("targetMode");
+
+    elHistoryList = document.getElementById("historyList");
+    elHistoryMeta = document.getElementById("historyMeta");
+
     loadCalibration();
     setStatus();
+    updateHistoryUI();
 
-    setMode("distance");
-    elMode.value = "distance";
-    updateModePill();
+    // default: MISURE (distance, finger)
+    appMode = "measure";
+    measureMode = "distance";
+    targetMode = "finger";
+    elMeasureMode.value = "distance";
+    elTargetMode.value = "finger";
+    setModePill();
+
+    updatePanelsState();
+    setResult("—", "Avvia fotocamera");
 
     requestAnimationFrame(() => {
       resizeCanvasToDisplay();

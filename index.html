@@ -85,7 +85,6 @@
     }
     .card .body{padding:14px;}
 
-    /* viewer desktop */
     .viewer{
       position:relative;
       width:100%;
@@ -98,7 +97,6 @@
     video{width:100%; height:100%; object-fit:cover; display:block}
     canvas{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
 
-    /* viewer mobile 60vh */
     @media (max-width: 900px){
       .viewer{
         aspect-ratio:auto;
@@ -128,6 +126,7 @@
     .btn.danger{background:#fff; color:var(--bad); border-color:rgba(229,57,53,.35);}
     .btn.danger:hover{background:var(--bad-weak)}
     .btn:disabled{opacity:.45; cursor:not-allowed}
+
     .select, .input{
       border:1px solid var(--border);
       background:#fff;
@@ -162,7 +161,6 @@
     .result strong{display:block; font-size:17px; margin-top:4px; letter-spacing:.2px;}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace}
 
-    /* mirino (opzionale) */
     .crosshair{
       position:absolute;
       inset:0;
@@ -184,11 +182,9 @@
     .crosshair::before{ width: 34px; height: 2px; }
     .crosshair::after{ width: 2px; height: 34px; }
 
-    /* fullscreen */
     .viewer:fullscreen{width:100vw; height:100vh; border-radius:0; border:0;}
     .viewer:-webkit-full-screen{width:100vw; height:100vh; border-radius:0; border:0;}
 
-    /* accordion */
     details{
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -222,7 +218,6 @@
     .tag.ok{color:var(--ok); border-color:rgba(38,166,154,.35); background:var(--ok-weak);}
     .tag.bad{color:var(--bad); border-color:rgba(229,57,53,.35); background:var(--bad-weak);}
 
-    /* storico misure */
     .history{
       border:1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -239,16 +234,9 @@
       color: var(--text);
       font-weight: 800;
     }
-    .history-list li{
-      margin: 6px 0;
-      font-weight: 800;
-    }
-    .history-meta{
-      font-size:12px; color:var(--muted);
-      font-weight:800;
-    }
+    .history-list li{ margin: 6px 0; font-weight: 800; }
+    .history-meta{ font-size:12px; color:var(--muted); font-weight:800; }
 
-    /* zoom badge */
     .zoom-badge{
       font-size:12px;
       padding:6px 10px;
@@ -258,6 +246,17 @@
       background:#fff;
       font-weight:900;
       white-space:nowrap;
+    }
+
+    .warnbox{
+      border:1px solid rgba(251,140,0,.35);
+      background: var(--warn-weak);
+      border-radius: var(--radius-sm);
+      padding:10px 12px;
+      font-size:12px;
+      color: rgba(29,53,87,.9);
+      font-weight:800;
+      line-height:1.35;
     }
   </style>
 </head>
@@ -269,7 +268,7 @@
         <img class="brandlogo" id="brandLogo" src="" alt="FR Color — Logo ufficiale" />
         <div class="brandtitle">
           <p class="title">Misure Cantiere (Compatibile)</p>
-          <div class="sub">Distanza (dito/mirino) + Area. Zoom preferito 0.6 (se supportato).</div>
+          <div class="sub">Pixel → cm con correzione distanza (telemetro). Zoom preferito 0.6 se supportato.</div>
         </div>
       </div>
       <div class="row" style="gap:8px;">
@@ -307,7 +306,6 @@
         <h3>Controlli</h3>
         <div class="body">
 
-          <!-- CALIBRAZIONE (accordion) -->
           <details id="calPanel" open>
             <summary>
               <span>Calibrazione</span>
@@ -332,12 +330,21 @@
             <div class="sep"></div>
 
             <div class="row">
+              <input id="calDistanceCm" class="input" type="number" step="1" min="1" placeholder="Distanza camera→A4 (cm)" />
+            </div>
+
+            <p class="hint">
+              Inserisci la distanza camera→A4 misurata col telemetro (es. 120 cm). Serve per correggere quando misuri più lontano.
+            </p>
+
+            <div class="sep"></div>
+
+            <div class="row">
               <button id="btnModeCal" class="btn small primary">Modalità calibrazione</button>
               <button id="btnResetCal" class="btn small danger">Reset calibrazione</button>
             </div>
           </details>
 
-          <!-- MISURE CANTIERE (accordion) -->
           <details id="msrPanel" open>
             <summary>
               <span>Misure cantiere</span>
@@ -358,6 +365,19 @@
                 <option value="finger" selected>Puntamento B: Dito</option>
                 <option value="crosshair">Puntamento B: Mirino</option>
               </select>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row">
+              <input id="targetDistanceCm" class="input" type="number" step="1" min="1" placeholder="Distanza camera→parete (cm)" />
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="warnbox">
+              Formula usata: misura = (pixel×cmPerPx) × (distanza_target / distanza_calib).<br/>
+              Se lasci vuote le distanze, usa 1:1 (solo piano uguale).
             </div>
 
             <div class="sep"></div>
@@ -393,19 +413,19 @@
 
 <script>
 const FRColorMeasureModule = (() => {
-  const LS_KEY = "frcolor_measure_calibration_v1";
+  const LS_KEY = "frcolor_measure_calibration_v2";
 
   let video, canvas, ctx, viewer, crosshairEl;
   let stream = null;
   let videoTrack = null;
 
-  // modes
   let appMode = "measure";      // "calibrate" | "measure"
   let measureMode = "distance"; // "distance" | "area"
   let targetMode = "finger";    // "finger" | "crosshair"
 
-  // calibration
+  // calibration: cmPerPx + distanza calib (cm)
   let cmPerPx = null;
+  let calDistanceCm = null;
   let calibrationMeta = null;
   let calTaps = [];
 
@@ -427,6 +447,7 @@ const FRColorMeasureModule = (() => {
 
   let elCalPanel, elMsrPanel, elCalTag, elMsrTag;
   let elRefPreset, elRefCustom;
+  let elCalDistanceCm, elTargetDistanceCm;
   let elMeasureMode, elTargetMode;
   let elHistoryList, elHistoryMeta;
 
@@ -439,6 +460,7 @@ const FRColorMeasureModule = (() => {
       const obj = JSON.parse(raw);
       if (typeof obj?.cmPerPx === "number" && obj.cmPerPx > 0) {
         cmPerPx = obj.cmPerPx;
+        calDistanceCm = (typeof obj?.calDistanceCm === "number" && obj.calDistanceCm > 0) ? obj.calDistanceCm : null;
         calibrationMeta = obj.meta || null;
       }
     } catch {}
@@ -447,6 +469,7 @@ const FRColorMeasureModule = (() => {
   function saveCalibration() {
     const payload = {
       cmPerPx,
+      calDistanceCm,
       meta: {
         savedAt: nowISO(),
         videoSettings: videoTrack?.getSettings?.() || null,
@@ -460,6 +483,7 @@ const FRColorMeasureModule = (() => {
   function clearCalibration() {
     localStorage.removeItem(LS_KEY);
     cmPerPx = null;
+    calDistanceCm = null;
     calibrationMeta = null;
   }
 
@@ -467,7 +491,8 @@ const FRColorMeasureModule = (() => {
     if (cmPerPx) {
       elStatusBadge.className = "status ok";
       const when = calibrationMeta?.savedAt ? calibrationMeta.savedAt.split("T")[0] : "—";
-      elStatusBadge.textContent = `Calibrazione: attiva (${when})`;
+      const d = calDistanceCm ? ` · Dcal ${Math.round(calDistanceCm)}cm` : "";
+      elStatusBadge.textContent = `Calibrazione: attiva (${when})${d}`;
 
       elCalTag.className = "tag ok";
       elCalTag.textContent = "ATTIVA";
@@ -537,6 +562,19 @@ const FRColorMeasureModule = (() => {
     return (Number.isFinite(n) && n > 0) ? n : null;
   }
 
+  function getNumberOrNull(inputEl) {
+    const v = parseFloat(inputEl.value);
+    return (Number.isFinite(v) && v > 0) ? v : null;
+  }
+
+  function correctionFactor() {
+    // fattore = Dtarget / Dcal
+    const dCal = calDistanceCm;
+    const dTarget = getNumberOrNull(elTargetDistanceCm);
+    if (!dCal || !dTarget) return 1; // se manca uno dei due, niente correzione
+    return dTarget / dCal;
+  }
+
   function setCrosshairVisible(on) {
     if (on) crosshairEl.classList.add("on");
     else crosshairEl.classList.remove("on");
@@ -551,6 +589,7 @@ const FRColorMeasureModule = (() => {
     const calDisabled = !inCal;
     elRefPreset.disabled = calDisabled;
     elRefCustom.disabled = calDisabled;
+    elCalDistanceCm.disabled = calDisabled;
     document.getElementById("btnResetCal").disabled = calDisabled;
 
     elMsrTag.className = "tag";
@@ -597,7 +636,7 @@ const FRColorMeasureModule = (() => {
   }
 
   function addToHistory(valueText) {
-    if (history.length === 10) history = [];
+    if (history.length === 10) history = []; // reset secco alla 11a
     history.push({ valueText });
     updateHistoryUI();
   }
@@ -625,7 +664,6 @@ const FRColorMeasureModule = (() => {
       await track.applyConstraints({ advanced: [{ zoom: target }] });
       return { applied:true, used: track.getSettings?.()?.zoom ?? target };
     } catch (e) {
-      // fallback: try min zoom
       try {
         const caps = track.getCapabilities?.();
         if (caps?.zoom?.min != null) {
@@ -649,8 +687,6 @@ const FRColorMeasureModule = (() => {
       });
 
       videoTrack = stream.getVideoTracks()[0] || null;
-
-      // prefer zoom 0.6 (se supportato), altrimenti zoom minimo
       if (videoTrack) await applyPreferredZoom(videoTrack, 0.6);
 
       video.srcObject = stream;
@@ -737,7 +773,8 @@ const FRColorMeasureModule = (() => {
       ctx.fill();
 
       if (cmPerPx) {
-        const cm = distPx(anchorA, b) * cmPerPx;
+        const baseCm = distPx(anchorA, b) * cmPerPx;
+        const cm = baseCm * correctionFactor();
         drawLabelOnLine(anchorA, b, formatDistance(cm));
       }
       return;
@@ -780,12 +817,20 @@ const FRColorMeasureModule = (() => {
 
       if (calTaps.length === 2) {
         const refCm = getReferenceCm();
+        const dCal = getNumberOrNull(elCalDistanceCm);
         if (!refCm) {
           calTaps = [];
           setResult("Calibrazione", "Valore cm non valido");
           redraw();
           return;
         }
+        if (!dCal) {
+          calTaps = [];
+          setResult("Calibrazione", "Inserisci distanza camera→A4 (cm)");
+          redraw();
+          return;
+        }
+
         const px = distPx(calTaps[0], calTaps[1]);
         if (!(px > 0)) {
           calTaps = [];
@@ -793,11 +838,13 @@ const FRColorMeasureModule = (() => {
           redraw();
           return;
         }
+
         cmPerPx = refCm / px;
+        calDistanceCm = dCal;
         saveCalibration();
         setStatus();
         setModePill();
-        setResult("Calibrato ✅", `Rapporto: ${cmPerPx.toExponential(3)} cm/px`);
+        setResult("Calibrato ✅", `cm/px: ${cmPerPx.toExponential(3)} · Dcal: ${Math.round(calDistanceCm)}cm`);
         calTaps = [];
         redraw();
         return;
@@ -827,10 +874,15 @@ const FRColorMeasureModule = (() => {
         lockedB = (targetMode === "crosshair") ? getCrosshairPoint() : (liveB || pt);
         isDragging = false;
 
-        const cm = distPx(anchorA, lockedB) * cmPerPx;
+        const baseCm = distPx(anchorA, lockedB) * cmPerPx;
+        const cm = baseCm * correctionFactor();
         const text = `${formatDistance(cm)} (indicativa)`;
         setResult("Distanza", text);
-        addToHistory(`Distanza: ${text}`);
+
+        const dT = getNumberOrNull(elTargetDistanceCm);
+        const dInfo = (calDistanceCm && dT) ? ` · Dcal ${Math.round(calDistanceCm)}cm · Dtar ${Math.round(dT)}cm` : "";
+        addToHistory(`Distanza: ${text}${dInfo}`);
+
         redraw();
         return;
       }
@@ -852,8 +904,9 @@ const FRColorMeasureModule = (() => {
         return;
       }
       if (areaTaps.length === 2) {
-        const cmW = distPx(areaTaps[0], areaTaps[1]) * cmPerPx;
-        setResult("Area", `Larghezza: ${formatDistance(cmW)} — Ora 2 tap per altezza`);
+        const baseW = distPx(areaTaps[0], areaTaps[1]) * cmPerPx;
+        const w = baseW * correctionFactor();
+        setResult("Area", `Larghezza: ${formatDistance(w)} — Ora 2 tap per altezza`);
         redraw();
         return;
       }
@@ -863,11 +916,18 @@ const FRColorMeasureModule = (() => {
         return;
       }
       if (areaTaps.length === 4) {
-        const cmW = distPx(areaTaps[0], areaTaps[1]) * cmPerPx;
-        const cmH = distPx(areaTaps[2], areaTaps[3]) * cmPerPx;
-        const areaText = `${formatAreaMq(cmW * cmH)} (indicativa)`;
+        const baseW = distPx(areaTaps[0], areaTaps[1]) * cmPerPx;
+        const baseH = distPx(areaTaps[2], areaTaps[3]) * cmPerPx;
+        const f = correctionFactor();
+        const w = baseW * f;
+        const h = baseH * f;
+        const areaText = `${formatAreaMq(w * h)} (indicativa)`;
         setResult("Area (rettangolo)", areaText);
-        addToHistory(`Area: ${areaText}`);
+
+        const dT = getNumberOrNull(elTargetDistanceCm);
+        const dInfo = (calDistanceCm && dT) ? ` · Dcal ${Math.round(calDistanceCm)}cm · Dtar ${Math.round(dT)}cm` : "";
+        addToHistory(`Area: ${areaText}${dInfo}`);
+
         areaTaps = [];
         redraw();
         return;
@@ -890,7 +950,8 @@ const FRColorMeasureModule = (() => {
     const pt = canvasPointFromEvent(evt);
     liveB = pt;
 
-    const cm = distPx(anchorA, liveB) * cmPerPx;
+    const baseCm = distPx(anchorA, liveB) * cmPerPx;
+    const cm = baseCm * correctionFactor();
     setResult("Distanza (live)", `${formatDistance(cm)} (indicativa)`);
     redraw();
   }
@@ -913,7 +974,6 @@ const FRColorMeasureModule = (() => {
     if (appMode === "measure" && measureMode === "distance" && targetMode === "finger" && isDragging) {
       isDragging = false;
     }
-
     handleTap(canvasPointFromEvent(evt));
   }
 
@@ -992,33 +1052,6 @@ const FRColorMeasureModule = (() => {
     });
   }
 
-  function enterCalibrationMode() {
-    appMode = "calibrate";
-    clearMeasureState();
-    calTaps = [];
-    areaTaps = [];
-    setResult("Calibrazione", "2 tap sul riferimento");
-    setModePill();
-    updatePanelsState();
-    redraw();
-  }
-
-  function enterMeasureMode() {
-    appMode = "measure";
-    calTaps = [];
-    setModePill();
-    updatePanelsState();
-    redraw();
-  }
-
-  function clearMeasureState() {
-    anchorA = null;
-    liveB = null;
-    lockedB = null;
-    isDragging = false;
-    areaTaps = [];
-  }
-
   function init() {
     video = document.getElementById("video");
     canvas = document.getElementById("overlay");
@@ -1039,6 +1072,8 @@ const FRColorMeasureModule = (() => {
 
     elRefPreset = document.getElementById("refPreset");
     elRefCustom = document.getElementById("refCustom");
+    elCalDistanceCm = document.getElementById("calDistanceCm");
+    elTargetDistanceCm = document.getElementById("targetDistanceCm");
 
     elMeasureMode = document.getElementById("mode");
     elTargetMode = document.getElementById("targetMode");
@@ -1047,11 +1082,11 @@ const FRColorMeasureModule = (() => {
     elHistoryMeta = document.getElementById("historyMeta");
 
     loadCalibration();
+    if (calDistanceCm) elCalDistanceCm.value = String(Math.round(calDistanceCm));
     setStatus();
     updateHistoryUI();
     updateZoomBadge();
 
-    // default: measure distance, finger
     appMode = "measure";
     measureMode = "distance";
     targetMode = "finger";

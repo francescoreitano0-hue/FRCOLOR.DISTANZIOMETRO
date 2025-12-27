@@ -1,5 +1,4 @@
 
-
 <!doctype html>
 <html lang="it">
 <head>
@@ -168,7 +167,7 @@
       position:absolute;
       inset:0;
       pointer-events:none;
-      opacity: 0; /* default OFF: preferito dito */
+      opacity: 0;
       transition: opacity .12s ease;
     }
     .crosshair.on{opacity:1;}
@@ -248,6 +247,18 @@
       font-size:12px; color:var(--muted);
       font-weight:800;
     }
+
+    /* zoom badge */
+    .zoom-badge{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      color:var(--muted);
+      background:#fff;
+      font-weight:900;
+      white-space:nowrap;
+    }
   </style>
 </head>
 
@@ -258,10 +269,13 @@
         <img class="brandlogo" id="brandLogo" src="" alt="FR Color — Logo ufficiale" />
         <div class="brandtitle">
           <p class="title">Misure Cantiere (Compatibile)</p>
-          <div class="sub">Distanza (dito o mirino) + Area. Calibrazione separata.</div>
+          <div class="sub">Distanza (dito/mirino) + Area. Zoom preferito 0.6 (se supportato).</div>
         </div>
       </div>
-      <div id="statusBadge" class="status warn">Calibrazione: NON attiva</div>
+      <div class="row" style="gap:8px;">
+        <div id="zoomBadge" class="zoom-badge">Zoom: —</div>
+        <div id="statusBadge" class="status warn">Calibrazione: NON attiva</div>
+      </div>
     </div>
 
     <div class="grid">
@@ -321,10 +335,6 @@
               <button id="btnModeCal" class="btn small primary">Modalità calibrazione</button>
               <button id="btnResetCal" class="btn small danger">Reset calibrazione</button>
             </div>
-
-            <p class="hint">
-              In calibrazione: 2 tap sul riferimento. In misure: pannello calibrazione chiuso e inattivo.
-            </p>
           </details>
 
           <!-- MISURE CANTIERE (accordion) -->
@@ -362,14 +372,10 @@
             <div class="history">
               <div class="history-head">
                 <div class="history-meta" id="historyMeta">Storico misure: 0/10</div>
-                <div class="history-meta" id="historyNote">Reset automatico alla 11ª</div>
+                <div class="history-meta">Reset automatico alla 11ª</div>
               </div>
               <ol class="history-list" id="historyList"></ol>
             </div>
-
-            <p class="hint">
-              Area: 2 tap larghezza + 2 tap altezza. Distanza: tap A, trascina B, tap finale blocca e salva.
-            </p>
           </details>
 
           <div class="sep"></div>
@@ -386,26 +392,17 @@
   </div>
 
 <script>
-/**
- * FRColorMeasureModule
- * - Modalità operative:
- *   CALIBRAZIONE: 2 tap sul riferimento -> cmPerPx salvato.
- *   MISURE: distanza (dito/mirino) + area (rettangolo).
- * - Separazione pannelli:
- *   quando entri in MISURE -> pannello calibrazione CHIUSO e controlli DISABILITATI.
- *   quando entri in CALIBRAZIONE -> pannello misure resta, ma la canvas opera in calibrazione.
- * - Storico: massimo 10, alla 11a reset totale.
- */
 const FRColorMeasureModule = (() => {
   const LS_KEY = "frcolor_measure_calibration_v1";
 
   let video, canvas, ctx, viewer, crosshairEl;
   let stream = null;
+  let videoTrack = null;
 
   // modes
-  let appMode = "measure"; // "calibrate" | "measure"
+  let appMode = "measure";      // "calibrate" | "measure"
   let measureMode = "distance"; // "distance" | "area"
-  let targetMode = "finger"; // "finger" | "crosshair"
+  let targetMode = "finger";    // "finger" | "crosshair"
 
   // calibration
   let cmPerPx = null;
@@ -413,18 +410,19 @@ const FRColorMeasureModule = (() => {
   let calTaps = [];
 
   // distance (laser)
-  let anchorA = null;     // punto A (tap)
-  let liveB = null;       // punto B live (dito o mirino)
-  let lockedB = null;     // punto B finale
+  let anchorA = null;
+  let liveB = null;
+  let lockedB = null;
   let isDragging = false;
 
   // area
-  let areaTaps = [];      // 4 tap
+  let areaTaps = [];
 
-  // history (10 reset)
-  let history = []; // { type, valueText }
+  // history
+  let history = [];
+
   // UI
-  let elStatusBadge, elModePill;
+  let elStatusBadge, elZoomBadge, elModePill;
   let elResultMain, elResultDetails;
 
   let elCalPanel, elMsrPanel, elCalTag, elMsrTag;
@@ -451,7 +449,7 @@ const FRColorMeasureModule = (() => {
       cmPerPx,
       meta: {
         savedAt: nowISO(),
-        videoSettings: stream?.getVideoTracks?.()?.[0]?.getSettings?.() || null,
+        videoSettings: videoTrack?.getSettings?.() || null,
         userAgent: navigator.userAgent
       }
     };
@@ -545,32 +543,24 @@ const FRColorMeasureModule = (() => {
   }
 
   function updatePanelsState() {
-    // A: quando entri in MISURE -> calibrazione chiusa e inattiva
     const inCal = (appMode === "calibrate");
 
-    if (!inCal) {
-      elCalPanel.open = false;     // chiude calibrazione
-    } else {
-      elCalPanel.open = true;      // apre calibrazione
-    }
+    if (!inCal) elCalPanel.open = false;
+    else elCalPanel.open = true;
 
-    // disabilita controlli calibrazione quando NON sei in calibrazione
     const calDisabled = !inCal;
     elRefPreset.disabled = calDisabled;
     elRefCustom.disabled = calDisabled;
     document.getElementById("btnResetCal").disabled = calDisabled;
 
-    // tag misure
     elMsrTag.className = "tag";
     elMsrTag.textContent = "PRONTO";
 
-    // mirino visibile solo se targetMode = crosshair (in misure distanza)
     setCrosshairVisible(appMode === "measure" && measureMode === "distance" && targetMode === "crosshair");
   }
 
   function enterCalibrationMode() {
     appMode = "calibrate";
-    // reset states
     clearMeasureState();
     calTaps = [];
     areaTaps = [];
@@ -582,7 +572,6 @@ const FRColorMeasureModule = (() => {
 
   function enterMeasureMode() {
     appMode = "measure";
-    // reset calib taps
     calTaps = [];
     setModePill();
     updatePanelsState();
@@ -608,10 +597,44 @@ const FRColorMeasureModule = (() => {
   }
 
   function addToHistory(valueText) {
-    // reset totale alla 11a misura
     if (history.length === 10) history = [];
     history.push({ valueText });
     updateHistoryUI();
+  }
+
+  function updateZoomBadge() {
+    const z = videoTrack?.getSettings?.()?.zoom;
+    if (z == null) elZoomBadge.textContent = "Zoom: —";
+    else elZoomBadge.textContent = `Zoom: ${Number(z).toFixed(2)}`;
+  }
+
+  async function applyPreferredZoom(track, preferredZoom = 0.6) {
+    try {
+      const caps = track.getCapabilities?.();
+      if (!caps || !caps.zoom) return { applied:false, reason:"zoom not supported" };
+
+      const minZ = caps.zoom.min;
+      const maxZ = caps.zoom.max;
+
+      let target = preferredZoom;
+      if (typeof minZ === "number" && typeof maxZ === "number") {
+        if (target < minZ) target = minZ;
+        if (target > maxZ) target = maxZ;
+      }
+
+      await track.applyConstraints({ advanced: [{ zoom: target }] });
+      return { applied:true, used: track.getSettings?.()?.zoom ?? target };
+    } catch (e) {
+      // fallback: try min zoom
+      try {
+        const caps = track.getCapabilities?.();
+        if (caps?.zoom?.min != null) {
+          await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
+          return { applied:true, used: track.getSettings?.()?.zoom ?? caps.zoom.min, fallback:true };
+        }
+      } catch {}
+      return { applied:false, reason: e?.name || "applyConstraints failed" };
+    }
   }
 
   async function startCamera() {
@@ -624,10 +647,19 @@ const FRColorMeasureModule = (() => {
         video: { facingMode: { ideal: "environment" } },
         audio: false
       });
+
+      videoTrack = stream.getVideoTracks()[0] || null;
+
+      // prefer zoom 0.6 (se supportato), altrimenti zoom minimo
+      if (videoTrack) await applyPreferredZoom(videoTrack, 0.6);
+
       video.srcObject = stream;
       await video.play();
+
       resizeCanvasToDisplay();
       redraw();
+
+      updateZoomBadge();
       setResult("Camera OK", "—");
     } catch (e) {
       setResult("Camera non avviata", `${e.name || "Errore"}: ${e.message || ""}`.trim());
@@ -637,7 +669,9 @@ const FRColorMeasureModule = (() => {
   function stopCamera() {
     try { if (stream) stream.getTracks().forEach(t => t.stop()); } catch {}
     stream = null;
+    videoTrack = null;
     video.srcObject = null;
+    updateZoomBadge();
     setResult("Camera fermata", "—");
     redraw();
   }
@@ -669,7 +703,6 @@ const FRColorMeasureModule = (() => {
     ctx.strokeStyle = "rgba(245,245,247,.95)";
     ctx.fillStyle = "rgba(245,245,247,.95)";
 
-    // CALIBRAZIONE: linee + punti
     if (appMode === "calibrate") {
       if (calTaps.length >= 2) {
         ctx.beginPath();
@@ -687,7 +720,6 @@ const FRColorMeasureModule = (() => {
       return;
     }
 
-    // MISURE: DISTANZA (laser)
     if (appMode === "measure" && measureMode === "distance" && anchorA) {
       const b = lockedB || liveB || (targetMode === "crosshair" ? getCrosshairPoint() : null);
       if (!b) return;
@@ -700,7 +732,6 @@ const FRColorMeasureModule = (() => {
       ctx.stroke();
       ctx.restore();
 
-      // punto A
       ctx.beginPath();
       ctx.arc(anchorA.x, anchorA.y, 6, 0, Math.PI * 2);
       ctx.fill();
@@ -712,7 +743,6 @@ const FRColorMeasureModule = (() => {
       return;
     }
 
-    // MISURE: AREA (4 tap)
     if (appMode === "measure" && measureMode === "area") {
       if (areaTaps.length >= 2) {
         ctx.beginPath();
@@ -736,14 +766,9 @@ const FRColorMeasureModule = (() => {
     }
   }
 
-  // =========================
-  // INPUT HANDLERS
-  // =========================
-
   function handleTap(pt) {
     if (!stream) { setResult("Avvia fotocamera", "—"); return; }
 
-    // CALIBRAZIONE
     if (appMode === "calibrate") {
       calTaps.push(pt);
 
@@ -775,8 +800,6 @@ const FRColorMeasureModule = (() => {
         setResult("Calibrato ✅", `Rapporto: ${cmPerPx.toExponential(3)} cm/px`);
         calTaps = [];
         redraw();
-
-        // resta in calibrazione finché non esci tu
         return;
       }
 
@@ -785,18 +808,15 @@ const FRColorMeasureModule = (() => {
       return;
     }
 
-    // MISURE: richiede calibrazione
     if (!cmPerPx) {
       setResult("Calibrazione richiesta", "Passa a Calibrazione e calibra prima");
       return;
     }
 
-    // DISTANZA: tap A e tap finale (B bloccato)
     if (measureMode === "distance") {
       if (!anchorA) {
         anchorA = pt;
         lockedB = null;
-        // inizializza liveB in base al target
         liveB = (targetMode === "crosshair") ? getCrosshairPoint() : pt;
         setResult("Distanza (live)", "—");
         redraw();
@@ -804,7 +824,6 @@ const FRColorMeasureModule = (() => {
       }
 
       if (anchorA && !lockedB) {
-        // tap finale -> blocca B (dito: ultimo liveB, mirino: centro)
         lockedB = (targetMode === "crosshair") ? getCrosshairPoint() : (liveB || pt);
         isDragging = false;
 
@@ -816,7 +835,6 @@ const FRColorMeasureModule = (() => {
         return;
       }
 
-      // tap successivo: riparti da nuovo A
       anchorA = pt;
       lockedB = null;
       liveB = (targetMode === "crosshair") ? getCrosshairPoint() : pt;
@@ -825,7 +843,6 @@ const FRColorMeasureModule = (() => {
       return;
     }
 
-    // AREA: 4 tap
     if (measureMode === "area") {
       areaTaps.push(pt);
 
@@ -862,14 +879,12 @@ const FRColorMeasureModule = (() => {
     }
   }
 
-  // Drag (solo in misure distanza e target dito, tra tap A e tap B finale)
   function handlePointerMove(evt) {
     if (appMode !== "measure") return;
     if (measureMode !== "distance") return;
     if (targetMode !== "finger") return;
     if (!anchorA) return;
     if (lockedB) return;
-
     if (!isDragging) return;
 
     const pt = canvasPointFromEvent(evt);
@@ -887,7 +902,6 @@ const FRColorMeasureModule = (() => {
     if (!anchorA) return;
     if (lockedB) return;
 
-    // inizia drag dopo tap A (per definire B live)
     isDragging = true;
     liveB = canvasPointFromEvent(evt);
     redraw();
@@ -896,34 +910,19 @@ const FRColorMeasureModule = (() => {
   function handlePointerUp(evt) {
     evt.preventDefault();
 
-    // TAP = pointerup sempre (stabile Android)
-    const pt = canvasPointFromEvent(evt);
-
-    // se siamo in misura distanza dito e stavamo trascinando, rilascia drag ma NON blocca misura:
-    // il blocco avviene col tap finale gestito da handleTap (secondo tap).
-    // Però pointerup è anche tap: quindi per evitare doppio evento, gestiamo così:
     if (appMode === "measure" && measureMode === "distance" && targetMode === "finger" && isDragging) {
-      // termina drag (ma lascia liveB aggiornato)
       isDragging = false;
-      // NON return: il pointerup deve comunque contare come "tap finale" solo se l'utente vuole.
-      // Quindi lasciamo che handleTap blocchi.
     }
 
-    handleTap(pt);
+    handleTap(canvasPointFromEvent(evt));
   }
-
-  // =========================
-  // UI WIRING
-  // =========================
 
   function wireUI() {
     document.getElementById("btnStartCam").addEventListener("click", startCamera);
     document.getElementById("btnStopCam").addEventListener("click", stopCamera);
     document.getElementById("btnFullscreen").addEventListener("click", enterFullscreen);
 
-    document.getElementById("btnModeCal").addEventListener("click", () => {
-      enterCalibrationMode();
-    });
+    document.getElementById("btnModeCal").addEventListener("click", () => enterCalibrationMode());
 
     document.getElementById("btnResetCal").addEventListener("click", () => {
       clearCalibration();
@@ -939,13 +938,12 @@ const FRColorMeasureModule = (() => {
 
     elMeasureMode.addEventListener("change", () => {
       measureMode = elMeasureMode.value;
-      // quando passi a misure, chiudi calibrazione e rendila inattiva (A)
-      enterMeasureMode();
+      enterMeasureMode();  // chiude calibrazione e la disabilita (A)
       clearMeasureState();
       setModePill();
       updatePanelsState();
 
-      if (measureMode === "distance") setResult("Distanza", "Tap A, poi trascina e tap finale");
+      if (measureMode === "distance") setResult("Distanza", "Tap A, trascina e tap finale");
       else setResult("Area", "2 tap larghezza + 2 tap altezza");
       redraw();
     });
@@ -969,14 +967,10 @@ const FRColorMeasureModule = (() => {
       updateHistoryUI();
     });
 
-    // Se apri il pannello Misure, usiamo quello come "entrata in misure"
     elMsrPanel.addEventListener("toggle", () => {
-      if (elMsrPanel.open && appMode !== "measure") {
-        enterMeasureMode();
-      }
+      if (elMsrPanel.open && appMode !== "measure") enterMeasureMode();
     });
 
-    // Canvas events
     canvas.addEventListener("pointerdown", (evt) => {
       evt.preventDefault();
       handlePointerDown(evt);
@@ -998,6 +992,33 @@ const FRColorMeasureModule = (() => {
     });
   }
 
+  function enterCalibrationMode() {
+    appMode = "calibrate";
+    clearMeasureState();
+    calTaps = [];
+    areaTaps = [];
+    setResult("Calibrazione", "2 tap sul riferimento");
+    setModePill();
+    updatePanelsState();
+    redraw();
+  }
+
+  function enterMeasureMode() {
+    appMode = "measure";
+    calTaps = [];
+    setModePill();
+    updatePanelsState();
+    redraw();
+  }
+
+  function clearMeasureState() {
+    anchorA = null;
+    liveB = null;
+    lockedB = null;
+    isDragging = false;
+    areaTaps = [];
+  }
+
   function init() {
     video = document.getElementById("video");
     canvas = document.getElementById("overlay");
@@ -1006,6 +1027,7 @@ const FRColorMeasureModule = (() => {
     crosshairEl = document.getElementById("crosshair");
 
     elStatusBadge = document.getElementById("statusBadge");
+    elZoomBadge = document.getElementById("zoomBadge");
     elModePill = document.getElementById("modePill");
     elResultMain = document.getElementById("resultMain");
     elResultDetails = document.getElementById("resultDetails");
@@ -1027,8 +1049,9 @@ const FRColorMeasureModule = (() => {
     loadCalibration();
     setStatus();
     updateHistoryUI();
+    updateZoomBadge();
 
-    // default: MISURE (distance, finger)
+    // default: measure distance, finger
     appMode = "measure";
     measureMode = "distance";
     targetMode = "finger";
@@ -1046,11 +1069,8 @@ const FRColorMeasureModule = (() => {
 
     wireUI();
 
-    // se logo non impostato, non rompe nulla
     const logo = document.getElementById("brandLogo");
-    if (logo && !logo.getAttribute("src")) {
-      logo.style.display = "none";
-    }
+    if (logo && !logo.getAttribute("src")) logo.style.display = "none";
   }
 
   return { init };

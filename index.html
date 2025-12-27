@@ -7,16 +7,6 @@
   <title>FR Color — Misurazione (Compatibile)</title>
 
   <style>
-    /* =========================================================
-       FR COLOR — UI THEME (UFFICIALE)
-       Palette ufficiale:
-       Navy: #1D3557
-       Light gray: #F5F5F7
-       Accenti (solo quando serve):
-       Teal #26A69A, Blue #1E88E5, Red #E53935, Orange #FB8C00,
-       Yellow #FDD835, Green #43A047, Purple #8E24AA
-       Stile: pulito, tecnico, ordinato, medio–alto
-       ========================================================= */
     :root{
       --bg: #F5F5F7;
       --surface: #FFFFFF;
@@ -48,70 +38,26 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .wrap{
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 14px;
-    }
+    .wrap{max-width:980px; margin:0 auto; padding:14px;}
 
     .brandbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-      box-shadow: var(--shadow);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px; border:1px solid var(--border); border-radius:var(--radius);
+      background:var(--surface); box-shadow:var(--shadow);
       flex-wrap:wrap;
     }
-    .brandleft{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width:0;
-    }
-    .brandlogo{
-      width: 120px;
-      max-width: 38vw;
-      height:auto;
-      display:block;
-    }
+    .brandleft{display:flex; align-items:center; gap:12px; min-width:0;}
+    .brandlogo{width:120px; max-width:38vw; height:auto; display:block;}
     .brandtitle{min-width:0}
-    .brandtitle .title{
-      margin: 0;
-      font-weight: 800;
-      letter-spacing: .2px;
-      font-size: 15px;
-      line-height: 1.1;
-    }
-    .brandtitle .sub{
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 4px;
-      line-height: 1.35;
-    }
+    .brandtitle .title{margin:0; font-weight:800; letter-spacing:.2px; font-size:15px; line-height:1.1;}
+    .brandtitle .sub{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.35;}
 
     .status{
-      font-size:12px;
-      padding:7px 12px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      color:var(--muted);
-      background:#fff;
-      white-space:nowrap;
+      font-size:12px; padding:7px 12px; border-radius:999px;
+      border:1px solid var(--border); color:var(--muted); background:#fff; white-space:nowrap;
     }
-    .status.ok{
-      color:var(--ok);
-      border-color: rgba(38,166,154,.35);
-      background: var(--ok-weak);
-    }
-    .status.warn{
-      color:var(--warn);
-      border-color: rgba(251,140,0,.35);
-      background: var(--warn-weak);
-    }
+    .status.ok{color:var(--ok); border-color:rgba(38,166,154,.35); background:var(--ok-weak);}
+    .status.warn{color:var(--warn); border-color:rgba(251,140,0,.35); background:var(--warn-weak);}
 
     .grid{
       margin-top:12px;
@@ -124,26 +70,24 @@
     }
 
     .card{
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
       overflow:hidden;
-      background: var(--surface);
-      box-shadow: var(--shadow);
+      background:var(--surface);
+      box-shadow:var(--shadow);
     }
     .card h3{
       margin:0;
-      padding: 12px 14px 10px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .2px;
-      border-bottom: 1px solid var(--border);
+      padding:12px 14px 10px;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.2px;
+      border-bottom:1px solid var(--border);
       background: linear-gradient(180deg, #ffffff, rgba(29,53,87,.02));
     }
     .card .body{padding:14px;}
 
-    /* ===============================
-       VIEWER (camera) — DESKTOP
-       =============================== */
+    /* viewer desktop */
     .viewer{
       position:relative;
       width:100%;
@@ -156,58 +100,43 @@
     video{width:100%; height:100%; object-fit:cover; display:block}
     canvas{position:absolute; inset:0; width:100%; height:100%; touch-action:none}
 
-    /* ===============================
-       VIEWER — MOBILE (60vh)
-       =============================== */
+    /* viewer mobile 60vh */
     @media (max-width: 900px){
       .viewer{
-        aspect-ratio: auto;
+        aspect-ratio:auto;
         height: min(60vh, 520px);
         min-height: 360px;
       }
       video, canvas{height:100%;}
     }
 
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
 
     .btn{
       appearance:none;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: var(--radius-sm);
-      font-weight: 800;
-      cursor: pointer;
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:var(--radius-sm);
+      font-weight:800;
+      cursor:pointer;
       transition: transform .04s ease, background .12s ease, border-color .12s ease;
     }
     .btn:active{transform:translateY(1px)}
-    .btn.primary{
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #fff;
-    }
+    .btn.primary{background:var(--primary); border-color:var(--primary); color:#fff;}
     .btn.primary:hover{background:#16304d}
-    .btn:hover{background: rgba(29,53,87,.04)}
+    .btn:hover{background:rgba(29,53,87,.04)}
     .btn.small{padding:8px 10px; font-size:12px}
-    .btn.danger{
-      background:#fff;
-      color: var(--bad);
-      border-color: rgba(229,57,53,.35);
-    }
-    .btn.danger:hover{background: var(--bad-weak)}
+    .btn.danger{background:#fff; color:var(--bad); border-color:rgba(229,57,53,.35);}
+    .btn.danger:hover{background:var(--bad-weak)}
 
     .select, .input{
       border:1px solid var(--border);
       background:#fff;
-      color: var(--text);
+      color:var(--text);
       padding:10px 12px;
-      border-radius: var(--radius-sm);
+      border-radius:var(--radius-sm);
       outline:none;
       min-width: 180px;
       font-weight:700;
@@ -217,84 +146,57 @@
       box-shadow: 0 0 0 4px rgba(30,136,229,.14);
     }
 
-    .hint{
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-      margin: 8px 0 0;
-    }
-
-    .sep{height:1px; background: var(--border); margin: 12px 0}
+    .hint{color:var(--muted); font-size:12px; line-height:1.4; margin:8px 0 0;}
+    .sep{height:1px; background:var(--border); margin:12px 0}
 
     .pill{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid var(--border);
-      color: var(--muted);
-      background:#fff;
-      font-weight:800;
+      font-size:12px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border); color:var(--muted); background:#fff; font-weight:800;
     }
-    .pill.ok{
-      color:var(--ok);
-      border-color: rgba(38,166,154,.35);
-      background: var(--ok-weak);
-    }
-    .pill.bad{
-      color:var(--bad);
-      border-color: rgba(229,57,53,.35);
-      background: var(--bad-weak);
-    }
+    .pill.ok{color:var(--ok); border-color:rgba(38,166,154,.35); background:var(--ok-weak);}
+    .pill.bad{color:var(--bad); border-color:rgba(229,57,53,.35); background:var(--bad-weak);}
 
     .result{
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: #fff;
+      padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff;
     }
-    .result .label{
-      font-size:12px;
-      color: var(--muted);
-      font-weight:800;
-      letter-spacing:.15px;
-    }
-    .result strong{
-      display:block;
-      font-size: 17px;
-      margin-top:4px;
-      letter-spacing:.2px;
-    }
+    .result .label{font-size:12px; color:var(--muted); font-weight:800; letter-spacing:.15px;}
+    .result strong{display:block; font-size:17px; margin-top:4px; letter-spacing:.2px;}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace}
 
-    /* Fullscreen: lascia che la camera occupi lo schermo */
-    .viewer:fullscreen{
-      width:100vw;
-      height:100vh;
-      border-radius:0;
-      border:0;
+    /* mirino */
+    .crosshair{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
     }
-    .viewer:-webkit-full-screen{
-      width:100vw;
-      height:100vh;
-      border-radius:0;
-      border:0;
+    .crosshair::before, .crosshair::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      background: rgba(245,245,247,.92);
+      border-radius: 999px;
+      box-shadow: 0 0 0 2px rgba(11,15,20,.20);
     }
+    .crosshair::before{ width: 34px; height: 2px; }
+    .crosshair::after{ width: 2px; height: 34px; }
+
+    /* fullscreen viewer */
+    .viewer:fullscreen{width:100vw; height:100vh; border-radius:0; border:0;}
+    .viewer:-webkit-full-screen{width:100vw; height:100vh; border-radius:0; border:0;}
   </style>
 </head>
 
 <body>
   <div class="wrap">
-
     <div class="brandbar">
       <div class="brandleft">
-        <!-- Inserisci qui il logo ufficiale FR Color (PNG trasparente) -->
-        <!-- Esempio: src="assets/frcolor-logo.png" -->
+        <!-- logo FR Color (opzionale qui: se src vuoto lo nascondo) -->
         <img class="brandlogo" id="brandLogo" src="" alt="FR Color — Logo ufficiale" />
         <div class="brandtitle">
           <p class="title">Misurazione (Modalità Compatibile)</p>
-          <div class="sub">
-            Fotocamera + calibrazione manuale. Indicativo: interni “pochi cm”, esterni 20–30 m stima.
-          </div>
+          <div class="sub">Fotocamera + calibrazione manuale. Modalità Distanza con “laser” live.</div>
         </div>
       </div>
       <div id="statusBadge" class="status warn">Calibrazione: NON attiva</div>
@@ -307,6 +209,7 @@
           <div class="viewer" id="viewer">
             <video id="video" playsinline muted></video>
             <canvas id="overlay"></canvas>
+            <div class="crosshair" aria-hidden="true"></div>
           </div>
 
           <div class="sep"></div>
@@ -319,7 +222,7 @@
           </div>
 
           <p class="hint">
-            Regola: se cambi zoom/lente o condizioni, rifai calibrazione. Evita lo zoom per misure più affidabili.
+            Distanza: tap 1 = punto A, muovi e leggi la misura live, tap 2 = punto B (blocca).
           </p>
         </div>
       </div>
@@ -331,7 +234,7 @@
           <div class="row">
             <select id="mode" class="select">
               <option value="calibrate">Calibrazione</option>
-              <option value="distance">Misura distanza</option>
+              <option value="distance">Misura distanza (laser)</option>
               <option value="area">Misura area (rettangolo)</option>
             </select>
 
@@ -349,7 +252,8 @@
 
           <div class="row">
             <button id="btnRecalibrate" class="btn small">Rifai calibrazione</button>
-            <button id="btnReset" class="btn small danger">Reset</button>
+            <button id="btnReset" class="btn small danger">Reset calibrazione</button>
+            <button id="btnClearMeasure" class="btn small">Azzera misura</button>
           </div>
 
           <div class="sep"></div>
@@ -357,31 +261,20 @@
           <div class="result">
             <div class="label">Risultato</div>
             <strong id="resultMain">—</strong>
-            <div class="hint mono" id="resultDetails">Tocca i punti sul video per operare.</div>
+            <div class="hint mono" id="resultDetails">—</div>
           </div>
 
           <div class="sep"></div>
 
           <p class="hint">
-            <span class="mono">Calibrazione</span>: tocca 2 punti sul riferimento inquadrato (es. lato A4).
-            Poi passa a <span class="mono">Misura distanza</span> o <span class="mono">Misura area</span>.
+            Area: 2 tap larghezza + 2 tap altezza (come prima). Distanza: “laser” live tra punto A e mirino.
           </p>
-
         </div>
       </div>
     </div>
   </div>
 
 <script>
-/**
- * FRColorMeasureModule
- * - Modulo isolato: salva solo calibrazione in localStorage.
- * - Modalità:
- *   1) Calibrazione: 2 tap su riferimento (cm noti) => cmPerPx
- *   2) Distanza: 2 tap => distanza
- *   3) Area rettangolo: 2 tap larghezza + 2 tap altezza => mq
- * - Non dipende da WebXR/ARCore.
- */
 const FRColorMeasureModule = (() => {
   const LS_KEY = "frcolor_measure_calibration_v1";
 
@@ -390,9 +283,14 @@ const FRColorMeasureModule = (() => {
 
   // state
   let mode = "calibrate"; // calibrate | distance | area
-  let taps = [];          // points in CSS coords
-  let cmPerPx = null;     // number
+  let taps = [];          // usato per area + calibrazione
+  let cmPerPx = null;
   let calibrationMeta = null;
+
+  // distanza laser
+  let anchorA = null;     // punto A fissato con tap1 (in coordinate CSS)
+  let lockedB = null;     // punto B bloccato con tap2 (in coordinate CSS)
+  let rafId = null;
 
   // UI
   let elStatusBadge, elMode, elModePill, elRefPreset, elRefCustom;
@@ -452,7 +350,7 @@ const FRColorMeasureModule = (() => {
 
   function setResult(main, details) {
     elResultMain.textContent = main;
-    elResultDetails.textContent = details;
+    elResultDetails.textContent = details || "";
   }
 
   function resetTaps() {
@@ -460,17 +358,22 @@ const FRColorMeasureModule = (() => {
     redraw();
   }
 
+  function clearLaserMeasure() {
+    anchorA = null;
+    lockedB = null;
+    stopLiveLoop();
+    redraw();
+    setResult("—", "—");
+  }
+
   function setMode(newMode) {
     mode = newMode;
     resetTaps();
+    clearLaserMeasure();
     updateModePill();
-    if (mode === "calibrate") {
-      setResult("—", "Inquadra il riferimento e tocca 2 punti per calibrare.");
-    } else if (mode === "distance") {
-      setResult("—", "Tocca 2 punti per misurare la distanza.");
-    } else {
-      setResult("—", "Tocca 2 punti per larghezza, poi 2 punti per altezza.");
-    }
+    if (mode === "calibrate") setResult("—", "Calibrazione: 2 tap sul riferimento.");
+    if (mode === "distance") setResult("—", "Distanza: tap A, muovi (live), tap B per bloccare.");
+    if (mode === "area") setResult("—", "Area: 2 tap larghezza + 2 tap altezza.");
   }
 
   async function startCamera() {
@@ -487,7 +390,7 @@ const FRColorMeasureModule = (() => {
       await video.play();
       resizeCanvasToDisplay();
       redraw();
-      setResult("Camera OK", "Seleziona modalità e tocca i punti sul video.");
+      setResult("Camera OK", "Seleziona modalità e inizia.");
     } catch (e) {
       setResult("Camera non avviata", `${e.name || "Errore"}: ${e.message || ""}`.trim());
     }
@@ -497,7 +400,8 @@ const FRColorMeasureModule = (() => {
     try { if (stream) stream.getTracks().forEach(t => t.stop()); } catch {}
     stream = null;
     video.srcObject = null;
-    setResult("Camera fermata", "Riavvia fotocamera quando serve.");
+    stopLiveLoop();
+    setResult("Camera fermata", "—");
   }
 
   function enterFullscreen() {
@@ -522,12 +426,18 @@ const FRColorMeasureModule = (() => {
     canvas.width = Math.max(1, Math.round(rect.width * dpr));
     canvas.height = Math.max(1, Math.round(rect.height * dpr));
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.scale(dpr, dpr); // disegniamo in coordinate CSS
+    ctx.scale(dpr, dpr);
   }
 
   function canvasPointFromEvent(evt) {
     const rect = canvas.getBoundingClientRect();
     return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+  }
+
+  function getCrosshairPoint() {
+    // punto B live = centro del canvas in coordinate CSS
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.width / 2, y: rect.height / 2 };
   }
 
   function distPx(a, b) {
@@ -545,18 +455,40 @@ const FRColorMeasureModule = (() => {
     return mq.toFixed(2) + " m²";
   }
 
+  function stopLiveLoop() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  function startLiveLoop() {
+    stopLiveLoop();
+    const loop = () => {
+      if (mode !== "distance" || !anchorA || !cmPerPx || lockedB) {
+        rafId = null;
+        return;
+      }
+      const liveB = getCrosshairPoint();
+      const cm = distPx(anchorA, liveB) * cmPerPx;
+      // misura live vicino alla linea: render in redraw + testo qui
+      setResult("Distanza (live)", `${formatDistance(cm)} (indicativa)`);
+      redraw(liveB, cm);
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+  }
+
   function handleTap(pt) {
     if (!stream) {
-      setResult("Avvia la fotocamera", "Prima avvia la fotocamera, poi tocca i punti.");
+      setResult("Avvia la fotocamera", "Prima avvia la fotocamera.");
       return;
     }
 
-    taps.push(pt);
-
-    // --- CALIBRAZIONE ---
+    // CALIBRAZIONE
     if (mode === "calibrate") {
+      taps.push(pt);
+
       if (taps.length === 1) {
-        setResult("Calibrazione", "Tocca il secondo punto sul riferimento.");
+        setResult("Calibrazione", "Tocca il secondo punto.");
         redraw();
         return;
       }
@@ -564,20 +496,20 @@ const FRColorMeasureModule = (() => {
         const refCm = getReferenceCm();
         if (!refCm) {
           resetTaps();
-          setResult("Calibrazione", "Inserisci un valore valido (cm) e riprova.");
+          setResult("Calibrazione", "Valore cm non valido.");
           return;
         }
         const px = distPx(taps[0], taps[1]);
         if (!(px > 0)) {
           resetTaps();
-          setResult("Calibrazione", "Distanza non valida. Riprova.");
+          setResult("Calibrazione", "Distanza non valida.");
           return;
         }
         cmPerPx = refCm / px;
         saveCalibration();
         setStatus();
         updateModePill();
-        setResult("Calibrato ✅", `Rapporto: ${cmPerPx.toExponential(3)} cm/px — Puoi misurare.`);
+        setResult("Calibrato ✅", `Rapporto: ${cmPerPx.toExponential(3)} cm/px`);
         resetTaps();
         return;
       }
@@ -587,30 +519,45 @@ const FRColorMeasureModule = (() => {
 
     // per misure serve calibrazione
     if (!cmPerPx) {
-      resetTaps();
-      setResult("Calibrazione richiesta", "Prima calibra (Modalità Calibrazione).");
+      setResult("Calibrazione richiesta", "Passa a Calibrazione e calibra prima.");
       return;
     }
 
-    // --- DISTANZA ---
+    // DISTANZA LASER (tap A / tap B)
     if (mode === "distance") {
-      if (taps.length === 1) {
-        setResult("Distanza", "Tocca il secondo punto.");
+      if (!anchorA) {
+        anchorA = pt;     // tap 1 = A
+        lockedB = null;
+        setResult("Distanza (live)", "—");
+        startLiveLoop();
         redraw();
         return;
       }
-      if (taps.length === 2) {
-        const cm = distPx(taps[0], taps[1]) * cmPerPx;
+
+      if (anchorA && !lockedB) {
+        // tap 2 = blocca B dove stai mirando (crosshair)
+        lockedB = getCrosshairPoint();
+        stopLiveLoop();
+
+        const cm = distPx(anchorA, lockedB) * cmPerPx;
         setResult("Distanza", `${formatDistance(cm)} (indicativa)`);
-        resetTaps();
+        redraw(null, cm); // disegna laser bloccato
         return;
       }
-      resetTaps();
+
+      // tap successivo: riparti
+      anchorA = pt;
+      lockedB = null;
+      setResult("Distanza (live)", "—");
+      startLiveLoop();
+      redraw();
       return;
     }
 
-    // --- AREA (rettangolo): 2 tap larghezza + 2 tap altezza ---
+    // AREA (come prima)
     if (mode === "area") {
+      taps.push(pt);
+
       if (taps.length === 1) {
         setResult("Area", "Tocca il secondo punto per la larghezza.");
         redraw();
@@ -618,7 +565,7 @@ const FRColorMeasureModule = (() => {
       }
       if (taps.length === 2) {
         const cmW = distPx(taps[0], taps[1]) * cmPerPx;
-        setResult("Area", `Larghezza: ${formatDistance(cmW)} — Ora 2 tocchi per altezza.`);
+        setResult("Area", `Larghezza: ${formatDistance(cmW)} — Ora 2 tap per altezza.`);
         redraw();
         return;
       }
@@ -630,50 +577,97 @@ const FRColorMeasureModule = (() => {
       if (taps.length === 4) {
         const cmW = distPx(taps[0], taps[1]) * cmPerPx;
         const cmH = distPx(taps[2], taps[3]) * cmPerPx;
-        const cm2 = cmW * cmH;
-        setResult("Area (rettangolo)", `${formatAreaMq(cm2)} (indicativa)`);
+        setResult("Area (rettangolo)", `${formatAreaMq(cmW * cmH)} (indicativa)`);
         resetTaps();
         return;
       }
+
       resetTaps();
       return;
     }
   }
 
-  function redraw() {
-    if (!ctx) return;
+  function drawLabelOnLine(a, b, text) {
+    // posizione a metà linea, leggermente offset
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+
+    ctx.save();
+    ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(245,245,247,.95)";
+    ctx.strokeStyle = "rgba(11,15,20,.35)";
+    ctx.lineWidth = 4;
+
+    const padX = 8, padY = 6;
+    const w = ctx.measureText(text).width;
+    const x = midX + 10;
+    const y = midY - 10;
+
+    // “etichetta” semplice
+    ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function redraw(liveBOverride=null, liveCm=null) {
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    // overlay tecnico pulito (bianco)
+    // overlay tecnico pulito
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(245,245,247,.95)";
     ctx.fillStyle = "rgba(245,245,247,.95)";
 
-    // linee
-    if (taps.length >= 2) {
-      // prima coppia
-      ctx.beginPath();
-      ctx.moveTo(taps[0].x, taps[0].y);
-      ctx.lineTo(taps[1].x, taps[1].y);
-      ctx.stroke();
-    }
-    if (mode === "area" && taps.length >= 4) {
-      // seconda coppia (altezza)
-      ctx.beginPath();
-      ctx.moveTo(taps[2].x, taps[2].y);
-      ctx.lineTo(taps[3].x, taps[3].y);
-      ctx.stroke();
+    // CALIBRAZIONE/AREA: disegna linee tap
+    if (mode === "calibrate" || mode === "area") {
+      if (taps.length >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(taps[0].x, taps[0].y);
+        ctx.lineTo(taps[1].x, taps[1].y);
+        ctx.stroke();
+      }
+      if (mode === "area" && taps.length >= 4) {
+        ctx.beginPath();
+        ctx.moveTo(taps[2].x, taps[2].y);
+        ctx.lineTo(taps[3].x, taps[3].y);
+        ctx.stroke();
+      }
+
+      taps.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+        ctx.fillText(String(i + 1), p.x + 10, p.y - 10);
+      });
+      return;
     }
 
-    // punti
-    taps.forEach((p, i) => {
+    // DISTANZA LASER
+    if (mode === "distance" && anchorA) {
+      const b = lockedB || liveBOverride || getCrosshairPoint();
+
+      // linea “laser” tratteggiata
+      ctx.save();
+      ctx.setLineDash([10, 8]);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+      ctx.moveTo(anchorA.x, anchorA.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+
+      // punto A
+      ctx.beginPath();
+      ctx.arc(anchorA.x, anchorA.y, 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
-      ctx.fillText(String(i + 1), p.x + 10, p.y - 10);
-    });
+
+      // etichetta misura vicino alla linea
+      if (cmPerPx) {
+        const cm = (typeof liveCm === "number" && !lockedB) ? liveCm : (distPx(anchorA, b) * cmPerPx);
+        drawLabelOnLine(anchorA, b, formatDistance(cm));
+      }
+    }
   }
 
   function wireUI() {
@@ -696,11 +690,17 @@ const FRColorMeasureModule = (() => {
       clearCalibration();
       setStatus();
       updateModePill();
+      clearLaserMeasure();
       resetTaps();
-      setResult("Reset", "Calibrazione cancellata. Rifai calibrazione quando vuoi.");
+      setResult("Reset", "Calibrazione cancellata.");
     });
 
-    canvas.addEventListener("pointerdown", (evt) => {
+    document.getElementById("btnClearMeasure").addEventListener("click", () => {
+      clearLaserMeasure();
+    });
+
+    // pointerup più stabile su Android
+    canvas.addEventListener("pointerup", (evt) => {
       evt.preventDefault();
       handleTap(canvasPointFromEvent(evt));
       redraw();
@@ -712,7 +712,6 @@ const FRColorMeasureModule = (() => {
     });
 
     document.addEventListener("fullscreenchange", () => {
-      // quando entra/esce fullscreen, ridimensiona overlay
       resizeCanvasToDisplay();
       redraw();
     });
@@ -735,9 +734,9 @@ const FRColorMeasureModule = (() => {
     loadCalibration();
     setStatus();
 
-    // default
-    setMode("calibrate");
-    elMode.value = "calibrate";
+    setMode("distance");
+    elMode.value = "distance";
+    updateModePill();
 
     requestAnimationFrame(() => {
       resizeCanvasToDisplay();
@@ -751,13 +750,6 @@ const FRColorMeasureModule = (() => {
     if (logo && !logo.getAttribute("src")) {
       logo.style.display = "none";
     }
-
-    if (!cmPerPx) {
-      setResult("Pronto", "Avvia fotocamera → calibra (2 tocchi) → misura.");
-    } else {
-      setResult("Pronto ✅", "Calibrazione presente. Puoi misurare o rifare calibrazione.");
-    }
-    updateModePill();
   }
 
   return { init };

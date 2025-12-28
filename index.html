@@ -1,11 +1,545 @@
-/* ========= AR MODULE (WebXR reale: tap A/B + laser live + save) ========= */
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>FR SYSTEM — Misure</title>
+  <style>
+    :root{
+      --bg:#F5F5F7;
+      --surface:#FFFFFF;
+      --text:#1D3557;
+      --muted:rgba(29,53,87,.72);
+      --border:rgba(29,53,87,.14);
+      --shadow:0 10px 28px rgba(29,53,87,.08);
+
+      --primary:#1D3557;
+      --accent:#26A69A;
+
+      --ok:#26A69A;
+      --warn:#FB8C00;
+      --bad:#E53935;
+
+      --r:18px;
+      --r2:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:14px;min-height:100%;display:flex;flex-direction:column;gap:12px}
+
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:14px;background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--r);box-shadow:var(--shadow);flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .logo{width:120px;max-width:38vw;height:auto;display:block}
+    .brandText{min-width:0}
+    .brandTitle{font-weight:1000;letter-spacing:.2px;font-size:16px;line-height:1.1}
+    .brandSub{margin-top:4px;font-size:12px;color:var(--muted);line-height:1.35}
+
+    .pill{
+      font-size:12px;padding:7px 12px;border-radius:999px;border:1px solid var(--border);
+      background:#fff;color:var(--muted);font-weight:900;white-space:nowrap;
+    }
+    .pill.ok{border-color:rgba(38,166,154,.35);background:rgba(38,166,154,.14);color:var(--ok)}
+    .pill.bad{border-color:rgba(229,57,53,.35);background:rgba(229,57,53,.12);color:var(--bad)}
+    .pill.warn{border-color:rgba(251,140,0,.35);background:rgba(251,140,0,.14);color:var(--warn)}
+
+    .card{
+      width:100%;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .center{flex:1;display:flex;align-items:center;justify-content:center}
+    .hero{max-width:820px}
+    .heroHead{padding:18px 18px 12px}
+    .heroTitle{font-weight:1000;font-size:22px;letter-spacing:.2px}
+    .heroDesc{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.4}
+    .divider{height:1px;background:var(--border)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 18px 8px}
+    @media (max-width:760px){.grid2{grid-template-columns:1fr}}
+    .btn{
+      display:block;text-decoration:none;color:inherit;border:1px solid var(--border);
+      border-radius:var(--r2);background:#fff;padding:14px 14px;
+      transition:transform .04s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      cursor:pointer;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn:hover{background:rgba(29,53,87,.03)}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn.primary:hover{background:#16304d}
+    .btn.ghost{background:#fff}
+    .btn.big{padding:16px}
+    .btnTitle{font-weight:1000;letter-spacing:.2px;font-size:16px}
+    .btnDesc{margin-top:6px;font-size:12px;color:rgba(245,245,247,.88)}
+    .btn.ghost .btnDesc{color:var(--muted)}
+    .btn.disabled{opacity:.45;pointer-events:none}
+
+    .note{
+      margin:8px 18px 18px;font-size:12px;color:var(--muted);font-weight:900;
+      padding:10px 12px;border-radius:var(--r2);border:1px solid var(--border);background:#fff;
+    }
+    .note.ok{border-color:rgba(38,166,154,.35);background:rgba(38,166,154,.12);color:var(--ok)}
+    .note.warn{border-color:rgba(251,140,0,.35);background:rgba(251,140,0,.12);color:rgba(29,53,87,.9)}
+    .note.bad{border-color:rgba(229,57,53,.35);background:rgba(229,57,53,.12);color:rgba(29,53,87,.95)}
+
+    .foot{text-align:center;padding:6px 0 2px}
+    .muted{color:var(--muted);font-size:12px;font-weight:800}
+
+    .panel{padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .kbtn{
+      appearance:none;border:1px solid var(--border);background:#fff;color:var(--text);
+      padding:10px 12px;border-radius:var(--r2);font-weight:1000;cursor:pointer;
+      transition:transform .04s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+    }
+    .kbtn:active{transform:translateY(1px)}
+    .kbtn:hover{background:rgba(29,53,87,.04)}
+    .kbtn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .kbtn.primary:hover{background:#16304d}
+    .kbtn.danger{color:var(--bad);border-color:rgba(229,57,53,.35)}
+    .kbtn.danger:hover{background:rgba(229,57,53,.10)}
+    .kbtn:disabled{opacity:.45;cursor:not-allowed}
+
+    .viewer{
+      position:relative;width:100%;background:#0b0f14;overflow:hidden;
+      border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+      height:min(60vh,560px);min-height:360px;
+    }
+    @media (min-width:860px){.viewer{height:520px}}
+    .overlay2d{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    .hidden{display:none !important}
+    .small{font-size:12px;font-weight:900;color:var(--muted)}
+
+    video.cam, canvas.cam{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      background:#0b0f14;
+      display:block;
+    }
+
+    .hud{padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+    .hudBox{flex:1 1 260px;border:1px solid var(--border);background:#fff;border-radius:var(--r2);padding:10px 12px;}
+    .hudLabel{font-size:12px;color:var(--muted);font-weight:1000;letter-spacing:.15px}
+    .hudValue{margin-top:4px;font-size:18px;font-weight:1000}
+    .hudSub{margin-top:4px;font-size:12px;color:var(--muted);font-weight:900;line-height:1.35}
+    .list{margin:0;padding-left:18px;font-weight:900}
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <img class="logo" src="logo.png" alt="FR Color" onerror="this.style.display='none'">
+      <div class="brandText">
+        <div class="brandTitle">FR SYSTEM</div>
+        <div class="brandSub" id="subTitle">Seleziona la modalità di misurazione</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <span class="pill" id="httpsPill">HTTPS: —</span>
+      <span class="pill" id="camPill">CAM: —</span>
+      <span class="pill" id="arPillTop">AR: —</span>
+      <button class="kbtn hidden" id="btnHome">Home</button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <main class="center" id="homeView">
+    <section class="card hero">
+      <div class="heroHead">
+        <div class="heroTitle">Misure</div>
+        <div class="heroDesc">
+          Telemetro: indicativo con camera + sensori. AR: misura reale A→B (solo dispositivi compatibili).
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="grid2">
+        <button class="btn big ghost" id="goTele">
+          <div class="btnTitle">Telemetro</div>
+          <div class="btnDesc">Camera + sensori • Indicativo • Sempre disponibile</div>
+        </button>
+
+        <button class="btn big primary" id="goAR">
+          <div class="btnTitle">AR Misure</div>
+          <div class="btnDesc">WebXR AR • Tap A/B • Laser live • Salva 10</div>
+        </button>
+      </div>
+
+      <div class="note" id="compatNote">Controllo compatibilità…</div>
+    </section>
+  </main>
+
+  <!-- TELEMETRO -->
+  <section class="card hidden" id="teleView">
+    <div class="panel">
+      <button class="kbtn primary" id="tStartCam">Avvia Fotocamera</button>
+      <button class="kbtn" id="tEnableSensors">Attiva sensori</button>
+      <button class="kbtn" id="tBase" disabled>Tap Base</button>
+      <button class="kbtn" id="tTop" disabled>Tap Alto</button>
+      <button class="kbtn" id="tReset" disabled>Reset</button>
+      <button class="kbtn" id="tSave" disabled>Salva</button>
+      <button class="kbtn danger" id="tClearHistory">Azzera storico</button>
+      <span class="pill warn" id="tPill">Stato: —</span>
+    </div>
+
+    <div class="panel" style="padding-top:0;">
+      <div class="small">Altezza telefono da terra (cm)</div>
+      <input class="kbtn" id="tHeight" type="number" min="50" max="250" step="1" value="150" style="width:220px;" />
+      <span class="small">Consiglio: imposta una volta e lascia fisso</span>
+    </div>
+
+    <div class="viewer" id="tViewer">
+      <video class="cam" id="tVideo" playsinline muted autoplay></video>
+      <canvas class="overlay2d" id="tHud"></canvas>
+    </div>
+
+    <div class="hud">
+      <div class="hudBox">
+        <div class="hudLabel">Risultato</div>
+        <div class="hudValue" id="tOutMain">—</div>
+        <div class="hudSub" id="tOutSub">
+          1) Avvia Fotocamera  2) Attiva sensori  3) Punta BASE → Tap Base  4) Punta ALTO → Tap Alto
+        </div>
+      </div>
+
+      <div class="hudBox">
+        <div class="hudLabel" id="tHistLabel">Storico misure (0/10)</div>
+        <ol class="list" id="tHistList"></ol>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="note warn" style="margin:0; width:100%;">
+        Telemetro = trigonometria. Su 20–30 m è normale avere errore grande (per te ok).
+      </div>
+    </div>
+  </section>
+
+  <!-- AR -->
+  <section class="card hidden" id="arView">
+    <div class="panel">
+      <button class="kbtn primary" id="arStartCam">Avvia Fotocamera</button>
+      <button class="kbtn primary" id="arStartXR">Avvia AR</button>
+      <button class="kbtn" id="arReset" disabled>Reset</button>
+      <button class="kbtn" id="arSave" disabled>Salva</button>
+      <button class="kbtn danger" id="arClearHistory">Azzera storico</button>
+
+      <span class="pill" id="arPill">AR: —</span>
+      <span class="pill" id="arModePill">Modalità: Distanza</span>
+
+      <select class="kbtn" id="arModeSel" style="padding:10px 12px;">
+        <option value="distance" selected>Distanza (2 tap)</option>
+        <option value="area">Area (4 tap)</option>
+      </select>
+    </div>
+
+    <div class="viewer" id="arViewer">
+      <video class="cam" id="arVideo" playsinline muted autoplay></video>
+      <canvas id="arGL" class="cam" style="display:none;"></canvas>
+      <canvas class="overlay2d" id="arHud"></canvas>
+    </div>
+
+    <div class="hud">
+      <div class="hudBox">
+        <div class="hudLabel">Risultato</div>
+        <div class="hudValue" id="arOutMain">—</div>
+        <div class="hudSub" id="arOutSub">
+          Avvia camera per mirino. Poi “Avvia AR”. Tap A → laser live → tap B.
+        </div>
+      </div>
+
+      <div class="hudBox">
+        <div class="hudLabel" id="arHistLabel">Storico misure (0/10)</div>
+        <ol class="list" id="arHistList"></ol>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="note warn" style="margin:0; width:100%;">
+        Se non aggancia: serve luce e superfici con texture. Evita pareti bianche lisce.
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span class="muted">FR Color • Stile e colori ufficiali</span>
+  </footer>
+</div>
+
+<script>
+/* ========= ROUTER ========= */
+const homeView = document.getElementById('homeView');
+const arView   = document.getElementById('arView');
+const teleView = document.getElementById('teleView');
+const btnHome  = document.getElementById('btnHome');
+const subTitle = document.getElementById('subTitle');
+
+function show(view){
+  homeView.classList.add('hidden');
+  arView.classList.add('hidden');
+  teleView.classList.add('hidden');
+  btnHome.classList.remove('hidden');
+
+  if(view==='home'){
+    homeView.classList.remove('hidden');
+    btnHome.classList.add('hidden');
+    subTitle.textContent = 'Seleziona la modalità di misurazione';
+  }
+  if(view==='tele'){
+    teleView.classList.remove('hidden');
+    subTitle.textContent = 'Telemetro • Camera + sensori • Indicativo';
+  }
+  if(view==='ar'){
+    arView.classList.remove('hidden');
+    subTitle.textContent = 'AR Misure • WebXR • Tap A/B';
+  }
+}
+btnHome.addEventListener('click', () => show('home'));
+document.getElementById('goTele').addEventListener('click', () => show('tele'));
+document.getElementById('goAR').addEventListener('click', () => show('ar'));
+
+/* ========= STATUS ========= */
+const httpsPill = document.getElementById('httpsPill');
+const camPill   = document.getElementById('camPill');
+const arPillTop = document.getElementById('arPillTop');
+const compatNote= document.getElementById('compatNote');
+
+function setPill(el, text, kind){
+  el.textContent = text;
+  el.classList.remove('ok','warn','bad');
+  if(kind) el.classList.add(kind);
+}
+
+const httpsOk = (location.protocol === 'https:' || location.hostname === 'localhost') && window.isSecureContext;
+setPill(httpsPill, httpsOk ? 'HTTPS: OK' : 'HTTPS: NO', httpsOk ? 'ok' : 'bad');
+
+/* ========= CAMERA (shared) ========= */
+let camStream = null;
+
+async function startCamera(videoEl){
+  if(!httpsOk) throw new Error('HTTPS richiesto');
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia non supportato');
+
+  if(camStream){
+    videoEl.srcObject = camStream;
+    await videoEl.play().catch(()=>{});
+    return;
+  }
+  camStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" } },
+    audio: false
+  });
+  videoEl.srcObject = camStream;
+  await videoEl.play().catch(()=>{});
+  setPill(camPill,'CAM: OK','ok');
+}
+
+function stopCamera(){
+  if(!camStream) return;
+  camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  setPill(camPill,'CAM: OFF','warn');
+}
+
+/* ========= WEBXR SUPPORT CHECK ========= */
+async function checkWebXRAR(){
+  if(!httpsOk) return false;
+  if(!('xr' in navigator)) return false;
+  try{
+    return await navigator.xr.isSessionSupported('immersive-ar');
+  }catch{
+    return false;
+  }
+}
+
+(async () => {
+  setPill(camPill,'CAM: —','warn');
+  const arOk = await checkWebXRAR();
+  setPill(arPillTop, arOk ? 'AR: possibile' : 'AR: no', arOk ? 'ok' : 'warn');
+  compatNote.textContent = arOk
+    ? 'WebXR AR disponibile: puoi usare AR Misure.'
+    : 'WebXR AR non disponibile qui: usa Telemetro.';
+  compatNote.className = 'note ' + (arOk ? 'ok' : 'warn');
+})();
+
+/* ========= TELEMETRO ========= */
+(() => {
+  const tVideo = document.getElementById('tVideo');
+  const tHud   = document.getElementById('tHud');
+  const btnCam = document.getElementById('tStartCam');
+  const btnSen = document.getElementById('tEnableSensors');
+  const btnBase= document.getElementById('tBase');
+  const btnTop = document.getElementById('tTop');
+  const btnReset=document.getElementById('tReset');
+  const btnSave=document.getElementById('tSave');
+  const btnClear=document.getElementById('tClearHistory');
+  const pill   = document.getElementById('tPill');
+  const inH    = document.getElementById('tHeight');
+  const outMain= document.getElementById('tOutMain');
+  const outSub = document.getElementById('tOutSub');
+  const histLbl= document.getElementById('tHistLabel');
+  const histList=document.getElementById('tHistList');
+
+  const T = { pitchDeg:null, basePitch:null, topPitch:null, last:null, history:[] };
+
+  function set(text,kind){
+    pill.textContent = text;
+    pill.classList.remove('ok','warn','bad');
+    if(kind) pill.classList.add(kind);
+  }
+  function rad(d){ return d*Math.PI/180; }
+  function fmt(m){
+    if(!Number.isFinite(m)) return '—';
+    if(m>=10) return `${m.toFixed(2)} m`;
+    if(m>=1) return `${m.toFixed(3)} m`;
+    return `${(m*100).toFixed(1)} cm`;
+  }
+  function updateHistory(){
+    histList.innerHTML='';
+    T.history.forEach(x=>{const li=document.createElement('li'); li.textContent=x; histList.appendChild(li);});
+    histLbl.textContent = `Storico misure (${T.history.length}/10)`;
+  }
+  function addHistory(x){
+    if(T.history.length===10) T.history=[];
+    T.history.push(x);
+    updateHistory();
+  }
+  function drawCrosshair(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = tVideo.getBoundingClientRect();
+    tHud.width  = Math.max(1, Math.round(rect.width * dpr));
+    tHud.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = tHud.getContext('2d');
+    ctx.clearRect(0,0,tHud.width,tHud.height);
+    const cx = tHud.width/2, cy = tHud.height/2;
+    ctx.strokeStyle='rgba(245,245,247,.92)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx-18,cy); ctx.lineTo(cx+18,cy);
+    ctx.moveTo(cx,cy-18); ctx.lineTo(cx,cy+18);
+    ctx.stroke();
+  }
+
+  window.addEventListener('resize', drawCrosshair);
+
+  function handleOri(e){
+    if(typeof e.beta !== 'number') return;
+    T.pitchDeg = -e.beta;
+  }
+
+  async function enableSensors(){
+    try{
+      if(typeof DeviceOrientationEvent !== 'undefined' &&
+         typeof DeviceOrientationEvent.requestPermission === 'function'){
+        const res = await DeviceOrientationEvent.requestPermission();
+        if(res !== 'granted') throw new Error('Permission denied');
+      }
+      window.addEventListener('deviceorientation', handleOri, true);
+      set('Sensori: OK','ok');
+      btnBase.disabled=false;
+      btnTop.disabled=false;
+      btnReset.disabled=false;
+      outSub.textContent='Sensori attivi. Punta BASE → Tap Base. Poi punta ALTO → Tap Alto.';
+    }catch{
+      set('Sensori: KO','bad');
+      outSub.textContent='Non riesco ad attivare i sensori.';
+    }
+  }
+
+  function compute(){
+    const hCm = parseFloat(inH.value);
+    const h = (Number.isFinite(hCm) && hCm>0) ? (hCm/100) : 1.5;
+    if(T.basePitch==null || T.topPitch==null) return;
+
+    const tanA = Math.tan(Math.abs(rad(T.basePitch)));
+    if(!Number.isFinite(tanA) || tanA < 1e-4){
+      outMain.textContent='Errore';
+      outSub.textContent='Angolo BASE troppo orizzontale.';
+      return;
+    }
+    const D = h / tanA;
+    const H = h + D * Math.tan(rad(T.topPitch));
+
+    T.last = {D,H};
+    outMain.textContent = `Distanza: ${fmt(D)} • Altezza: ${fmt(H)}`;
+    outSub.textContent = `Base: ${T.basePitch.toFixed(1)}° • Alto: ${T.topPitch.toFixed(1)}° • h: ${(h*100).toFixed(0)} cm`;
+    btnSave.disabled=false;
+  }
+
+  function reset(){
+    T.basePitch=null; T.topPitch=null; T.last=null;
+    btnSave.disabled=true;
+    outMain.textContent='—';
+    outSub.textContent='Punta BASE → Tap Base. Poi punta ALTO → Tap Alto.';
+  }
+
+  btnCam.addEventListener('click', async () => {
+    try{
+      await startCamera(tVideo);
+      set('Camera: OK','ok');
+      drawCrosshair();
+    }catch(err){
+      set('Camera: KO','bad');
+      outSub.textContent = `Camera non disponibile: ${err.message}`;
+    }
+  });
+
+  btnSen.addEventListener('click', enableSensors);
+
+  btnBase.addEventListener('click', () => {
+    if(T.pitchDeg==null){ outSub.textContent='Prima “Attiva sensori”.'; return; }
+    T.basePitch = T.pitchDeg;
+    outSub.textContent = `BASE salvata (${T.basePitch.toFixed(1)}°). Ora punta ALTO → Tap Alto.`;
+    compute();
+  });
+
+  btnTop.addEventListener('click', () => {
+    if(T.pitchDeg==null){ outSub.textContent='Prima “Attiva sensori”.'; return; }
+    T.topPitch = T.pitchDeg;
+    outSub.textContent = `ALTO salvato (${T.topPitch.toFixed(1)}°).`;
+    compute();
+  });
+
+  btnReset.addEventListener('click', reset);
+
+  btnSave.addEventListener('click', () => {
+    if(!T.last) return;
+    addHistory(`Telemetro — D: ${fmt(T.last.D)} • H: ${fmt(T.last.H)}`);
+    btnSave.disabled=true;
+    outSub.textContent='Salvato ✅';
+  });
+
+  btnClear.addEventListener('click', () => { T.history=[]; updateHistory(); });
+
+  set('Stato: pronto','warn');
+  updateHistory();
+  drawCrosshair();
+})();
+
+/* ========= AR WEBXR (misura reale A/B) ========= */
 (() => {
   const arVideo = document.getElementById('arVideo');
   const arGL    = document.getElementById('arGL');
   const arHud   = document.getElementById('arHud');
 
   const btnCam  = document.getElementById('arStartCam');
-  const btnTry  = document.getElementById('arTryWebXR');
+  const btnXR   = document.getElementById('arStartXR');
   const btnReset= document.getElementById('arReset');
   const btnSave = document.getElementById('arSave');
   const btnClear= document.getElementById('arClearHistory');
@@ -21,141 +555,59 @@
   const histList= document.getElementById('arHistList');
 
   const S = {
-    session: null,
-    gl: null,
-    refSpace: null,
-    viewerSpace: null,
-    hitTestSource: null,
-
-    mode: 'distance',     // distance | area
-    points: [],           // stored points in refSpace: {x,y,z}
-    lastHit: null,        // reticle point live
-    lastValueText: null,
-
-    history: []
+    session:null, gl:null, refSpace:null, viewerSpace:null, hitTestSource:null,
+    mode:'distance',
+    points:[],
+    lastHit:null,
+    lastValueText:null,
+    history:[]
   };
 
-  function setPill(el, text, kind){
-    el.textContent = text;
-    el.classList.remove('ok','warn','bad');
-    if(kind) el.classList.add(kind);
-  }
   function setResult(m,s){ outMain.textContent=m; outSub.textContent=s||''; }
-
   function fmtMeters(m){
-    if (!Number.isFinite(m)) return '—';
-    if (m >= 10) return `${m.toFixed(2)} m`;
-    if (m >= 1)  return `${m.toFixed(3)} m`;
+    if(!Number.isFinite(m)) return '—';
+    if(m>=10) return `${m.toFixed(2)} m`;
+    if(m>=1) return `${m.toFixed(3)} m`;
     return `${(m*100).toFixed(1)} cm`;
   }
   function fmtArea(m2){
-    if (!Number.isFinite(m2)) return '—';
+    if(!Number.isFinite(m2)) return '—';
     return `${m2.toFixed(2)} m²`;
   }
-
   function dist(a,b){
     const dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z;
     return Math.sqrt(dx*dx+dy*dy+dz*dz);
   }
-  function areaRect(p1,p2,p3,p4){
-    const w = dist(p1,p2);
-    const h = dist(p3,p4);
-    return w*h;
-  }
-
   function updateHistory(){
     histList.innerHTML='';
-    S.history.forEach(x => { const li=document.createElement('li'); li.textContent=x; histList.appendChild(li); });
+    S.history.forEach(x=>{const li=document.createElement('li'); li.textContent=x; histList.appendChild(li);});
     histLbl.textContent = `Storico misure (${S.history.length}/10)`;
   }
   function addHistory(x){
-    if (S.history.length === 10) S.history = []; // reset alla 11ª
+    if(S.history.length===10) S.history=[];
     S.history.push(x);
     updateHistory();
   }
 
-  function resetMeasure(){
-    S.points = [];
-    S.lastValueText = null;
-    btnSave.disabled = true;
-    btnReset.disabled = false;
-
-    setResult('—',
-      S.mode === 'distance'
-        ? 'AR attivo. Tap 1 = punto A. Muovi: laser + valore live. Tap 2 = punto B.'
-        : 'AR attivo. Area: 4 tap (rettangolo). Dopo il 4° tap puoi salvare.'
-    );
-  }
-
-  // ---- Overlay 2D ----
   function resizeHud(){
     const dpr = window.devicePixelRatio || 1;
     const rect = arHud.getBoundingClientRect();
     arHud.width = Math.max(1, Math.round(rect.width * dpr));
     arHud.height= Math.max(1, Math.round(rect.height * dpr));
   }
-  window.addEventListener('resize', resizeHud);
-
-  // minimal mat4 utils for projection
-  function mat4Invert(a){
-    const inv = new Float32Array(16);
-    inv[0]=a[5]*a[10]*a[15]-a[5]*a[11]*a[14]-a[9]*a[6]*a[15]+a[9]*a[7]*a[14]+a[13]*a[6]*a[11]-a[13]*a[7]*a[10];
-    inv[4]=-a[4]*a[10]*a[15]+a[4]*a[11]*a[14]+a[8]*a[6]*a[15]-a[8]*a[7]*a[14]-a[12]*a[6]*a[11]+a[12]*a[7]*a[10];
-    inv[8]=a[4]*a[9]*a[15]-a[4]*a[11]*a[13]-a[8]*a[5]*a[15]+a[8]*a[7]*a[13]+a[12]*a[5]*a[11]-a[12]*a[7]*a[9];
-    inv[12]=-a[4]*a[9]*a[14]+a[4]*a[10]*a[13]+a[8]*a[5]*a[14]-a[8]*a[6]*a[13]-a[12]*a[5]*a[10]+a[12]*a[6]*a[9];
-    inv[1]=-a[1]*a[10]*a[15]+a[1]*a[11]*a[14]+a[9]*a[2]*a[15]-a[9]*a[3]*a[14]-a[13]*a[2]*a[11]+a[13]*a[3]*a[10];
-    inv[5]=a[0]*a[10]*a[15]-a[0]*a[11]*a[14]-a[8]*a[2]*a[15]+a[8]*a[3]*a[14]+a[12]*a[2]*a[11]-a[12]*a[3]*a[10];
-    inv[9]=-a[0]*a[9]*a[15]+a[0]*a[11]*a[13]+a[8]*a[1]*a[15]-a[8]*a[3]*a[13]-a[12]*a[1]*a[11]+a[12]*a[3]*a[9];
-    inv[13]=a[0]*a[9]*a[14]-a[0]*a[10]*a[13]-a[8]*a[1]*a[14]+a[8]*a[2]*a[13]+a[12]*a[1]*a[10]-a[12]*a[2]*a[9];
-    inv[2]=a[1]*a[6]*a[15]-a[1]*a[7]*a[14]-a[5]*a[2]*a[15]+a[5]*a[3]*a[14]+a[13]*a[2]*a[7]-a[13]*a[3]*a[6];
-    inv[6]=-a[0]*a[6]*a[15]+a[0]*a[7]*a[14]+a[4]*a[2]*a[15]-a[4]*a[3]*a[14]-a[12]*a[2]*a[7]+a[12]*a[3]*a[6];
-    inv[10]=a[0]*a[5]*a[15]-a[0]*a[7]*a[13]-a[4]*a[1]*a[15]+a[4]*a[3]*a[13]+a[12]*a[1]*a[7]-a[12]*a[3]*a[5];
-    inv[14]=-a[0]*a[5]*a[14]+a[0]*a[6]*a[13]+a[4]*a[1]*a[14]-a[4]*a[2]*a[13]-a[12]*a[1]*a[6]+a[12]*a[2]*a[5];
-    inv[3]=-a[1]*a[6]*a[11]+a[1]*a[7]*a[10]+a[5]*a[2]*a[11]-a[5]*a[3]*a[10]-a[9]*a[2]*a[7]+a[9]*a[3]*a[6];
-    inv[7]=a[0]*a[6]*a[11]-a[0]*a[7]*a[10]-a[4]*a[2]*a[11]+a[4]*a[3]*a[10]+a[8]*a[2]*a[7]-a[8]*a[3]*a[6];
-    inv[11]=-a[0]*a[5]*a[11]+a[0]*a[7]*a[9]+a[4]*a[1]*a[11]-a[4]*a[3]*a[9]-a[8]*a[1]*a[7]+a[8]*a[3]*a[5];
-    inv[15]=a[0]*a[5]*a[10]-a[0]*a[6]*a[9]-a[4]*a[1]*a[10]+a[4]*a[2]*a[9]+a[8]*a[1]*a[6]-a[8]*a[2]*a[5];
-    let det=a[0]*inv[0]+a[1]*inv[4]+a[2]*inv[8]+a[3]*inv[12];
-    if(!det) return null;
-    det=1.0/det;
-    for(let i=0;i<16;i++) inv[i]*=det;
-    return inv;
+  function resizeGL(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = arGL.getBoundingClientRect();
+    arGL.width = Math.max(1, Math.round(rect.width * dpr));
+    arGL.height= Math.max(1, Math.round(rect.height * dpr));
   }
-  function mat4Mul(a,b){
-    const o=new Float32Array(16);
-    for(let i=0;i<4;i++){
-      for(let j=0;j<4;j++){
-        o[j+i*4]=a[i*4+0]*b[j+0]+a[i*4+1]*b[j+4]+a[i*4+2]*b[j+8]+a[i*4+3]*b[j+12];
-      }
-    }
-    return o;
-  }
-  function projectPoint(pt, view){
-    const proj=view.projectionMatrix;
-    const camM=view.transform.matrix;
-    const viewM=mat4Invert(camM);
-    if(!viewM) return null;
-    const vp=mat4Mul(proj, viewM);
+  window.addEventListener('resize', () => { resizeHud(); resizeGL(); });
 
-    const x=pt.x,y=pt.y,z=pt.z;
-    const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12];
-    const clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];
-    const clipW=vp[3]*x+vp[7]*y+vp[11]*z+vp[15];
-    if(!clipW) return null;
-
-    const ndcX=clipX/clipW, ndcY=clipY/clipW;
-    return {
-      x:(ndcX*0.5+0.5)*arHud.width,
-      y:(-ndcY*0.5+0.5)*arHud.height
-    };
-  }
-
-  function drawOverlay(view){
+  function drawOverlay(){
     const ctx = arHud.getContext('2d');
     ctx.clearRect(0,0,arHud.width,arHud.height);
 
-    // crosshair
-    const cx=arHud.width/2, cy=arHud.height/2;
+    const cx = arHud.width/2, cy = arHud.height/2;
     ctx.strokeStyle='rgba(245,245,247,.92)';
     ctx.lineWidth=2;
     ctx.beginPath();
@@ -163,168 +615,127 @@
     ctx.moveTo(cx,cy-18); ctx.lineTo(cx,cy+18);
     ctx.stroke();
 
-    if(!view) return;
+    if(S.mode==='distance' && S.points.length>=1 && S.lastHit){
+      const A=S.points[0];
+      const B=(S.points.length>=2)?S.points[1]:S.lastHit;
 
-    // distance laser
-    if(S.mode==='distance' && S.points.length>=1){
-      const A = S.points[0];
-      const B = (S.points.length>=2) ? S.points[1] : S.lastHit;
-      if(B){
-        const pA=projectPoint(A,view), pB=projectPoint(B,view);
-        if(pA && pB){
-          ctx.save();
-          ctx.setLineDash([18,12]);
-          ctx.strokeStyle='rgba(245,245,247,.95)';
-          ctx.lineWidth=3;
-          ctx.beginPath(); ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y); ctx.stroke();
-
-          if(S.lastValueText){
-            const midX=(pA.x+pB.x)/2, midY=(pA.y+pB.y)/2;
-            ctx.setLineDash([]);
-            ctx.font=`${Math.round(14*(window.devicePixelRatio||1))}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
-            ctx.lineWidth=6;
-            ctx.strokeStyle='rgba(11,15,20,.35)';
-            ctx.fillStyle='rgba(245,245,247,.95)';
-            ctx.strokeText(S.lastValueText, midX+18, midY-18);
-            ctx.fillText(S.lastValueText, midX+18, midY-18);
-          }
-          ctx.restore();
-        }
-      }
-    }
-
-    // area segments (simple)
-    if(S.mode==='area' && S.points.length>0){
+      // disegna "laser" semplice centro schermo (indicativo visivo)
       ctx.save();
+      ctx.setLineDash([18,12]);
       ctx.strokeStyle='rgba(245,245,247,.95)';
       ctx.lineWidth=3;
-      ctx.setLineDash([14,10]);
-
-      for(let i=0;i<S.points.length-1;i++){
-        const p1=projectPoint(S.points[i],view);
-        const p2=projectPoint(S.points[i+1],view);
-        if(p1 && p2){
-          ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
-        }
-      }
-      if(S.points.length<4 && S.lastHit){
-        const p1=projectPoint(S.points[S.points.length-1],view);
-        const p2=projectPoint(S.lastHit,view);
-        if(p1 && p2){
-          ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
-        }
-      }
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx, cy-200);
+      ctx.stroke();
       ctx.restore();
+
+      if(S.lastValueText){
+        ctx.font=`${Math.round(14*(window.devicePixelRatio||1))}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
+        ctx.lineWidth=6;
+        ctx.strokeStyle='rgba(11,15,20,.35)';
+        ctx.fillStyle='rgba(245,245,247,.95)';
+        ctx.strokeText(S.lastValueText, cx+22, cy-22);
+        ctx.fillText(S.lastValueText, cx+22, cy-22);
+      }
     }
   }
 
-  function hideVideoShowXR(){
-    arVideo.style.display = 'none';
-    arGL.style.display = 'block';
-  }
-  function showVideoHideXR(){
-    arVideo.style.display = 'block';
-    arGL.style.display = 'none';
-  }
-
-  function resizeGL(){
-    const dpr = window.devicePixelRatio || 1;
-    const rect = arGL.getBoundingClientRect();
-    arGL.width  = Math.max(1, Math.round(rect.width * dpr));
-    arGL.height = Math.max(1, Math.round(rect.height * dpr));
+  function resetMeasure(){
+    S.points=[];
+    S.lastValueText=null;
+    btnSave.disabled=true;
+    setResult('—', S.mode==='distance'
+      ? 'AR attivo. Tap 1 = punto A. Muovi: valore live. Tap 2 = punto B.'
+      : 'Area: 4 tap (rettangolo).');
   }
 
-  async function startWebXR(){
+  async function startXR(){
     const ok = await checkWebXRAR();
     if(!ok){
       setPill(pillAR,'AR: non supportato','warn');
-      setResult('AR non disponibile','Questo dispositivo/browser non supporta WebXR AR. Usa Telemetro.');
+      setResult('AR non disponibile','Questo dispositivo/browser non supporta WebXR AR.');
       return;
     }
 
-    // Stop camera stream visual (se attivo) e passa a XR
-    showVideoHideXR(); // prima mostra per sicurezza
-    hideVideoShowXR();
-    resizeGL();
-    resizeHud();
+    // switch to XR canvas
+    arVideo.style.display='none';
+    arGL.style.display='block';
+    resizeGL(); resizeHud();
 
     const gl = arGL.getContext('webgl', { alpha:true, antialias:true });
     if(!gl){
       setPill(pillAR,'AR: WebGL KO','bad');
-      setResult('Errore','WebGL non disponibile.');
-      showVideoHideXR();
+      setResult('Errore','WebGL non disponibile');
       return;
     }
-
     S.gl = gl;
 
     let session;
     try{
       session = await navigator.xr.requestSession('immersive-ar', {
         requiredFeatures: ['hit-test'],
-        optionalFeatures: ['local-floor', 'dom-overlay'],
-        domOverlay: { root: document.body }
+        optionalFeatures: ['local-floor']
       });
     }catch(e){
       setPill(pillAR,'AR: avvio KO','bad');
-      setResult('Errore avvio AR','Richiesta sessione AR rifiutata.');
-      showVideoHideXR();
+      setResult('Errore avvio AR','Permessi o sessione rifiutata.');
+      arGL.style.display='none';
+      arVideo.style.display='block';
       return;
     }
 
     S.session = session;
     setPill(pillAR,'AR: attivo','ok');
-    btnReset.disabled = false;
+    btnReset.disabled=false;
 
     session.addEventListener('end', () => {
       S.session=null; S.hitTestSource=null; S.refSpace=null; S.viewerSpace=null;
       setPill(pillAR,'AR: fermo','warn');
+      btnSave.disabled=true;
+      btnReset.disabled=true;
+      arGL.style.display='none';
+      arVideo.style.display='block';
       setResult('—','Sessione AR terminata.');
-      btnSave.disabled = true;
-      btnReset.disabled = true;
-      showVideoHideXR(); // torna alla camera normale
     });
 
     const layer = new XRWebGLLayer(session, gl);
     session.updateRenderState({ baseLayer: layer });
 
-    S.refSpace = await session.requestReferenceSpace('local-floor').catch(async() => session.requestReferenceSpace('local'));
+    S.refSpace = await session.requestReferenceSpace('local-floor').catch(async()=>session.requestReferenceSpace('local'));
     S.viewerSpace = await session.requestReferenceSpace('viewer');
     S.hitTestSource = await session.requestHitTestSource({ space: S.viewerSpace });
 
-    // Tap = select
     session.addEventListener('select', () => {
       if(!S.lastHit) return;
 
       if(S.mode==='distance'){
         if(S.points.length===0){
           S.points=[S.lastHit];
-          btnSave.disabled = true;
-          setResult('Distanza (live)','Punto A impostato. Muovi: valore live. Tap per fissare B.');
+          btnSave.disabled=true;
+          setResult('Distanza (live)','Punto A impostato. Tap per fissare B.');
         }else if(S.points.length===1){
           S.points=[S.points[0], S.lastHit];
-          btnSave.disabled = false;
+          btnSave.disabled=false;
           setResult('Distanza pronta', S.lastValueText || '—');
         }else{
-          // riparti
           S.points=[S.lastHit];
-          btnSave.disabled = true;
+          btnSave.disabled=true;
           setResult('Distanza (live)','Nuovo A impostato. Tap per fissare B.');
         }
       }else{
-        // area: 4 taps
         if(S.points.length<4){
           S.points.push(S.lastHit);
           if(S.points.length===4){
-            btnSave.disabled = false;
+            btnSave.disabled=false;
             setResult('Area pronta', S.lastValueText || '—');
           }else{
-            btnSave.disabled = true;
-            setResult('Area', `Punti: ${S.points.length}/4 (tap per aggiungere)`);
+            btnSave.disabled=true;
+            setResult('Area', `Punti: ${S.points.length}/4`);
           }
         }else{
           S.points=[S.lastHit];
-          btnSave.disabled = true;
+          btnSave.disabled=true;
           setResult('Area','Riparti: punti 1/4');
         }
       }
@@ -352,7 +763,6 @@
     gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // hit-test al centro (mirino)
     const hits = frame.getHitTestResults(S.hitTestSource);
     if(hits.length){
       const hitPose = hits[0].getPose(S.refSpace);
@@ -362,10 +772,9 @@
       }
     }
 
-    // valore live
     if(S.mode==='distance' && S.points.length>=1 && S.lastHit){
       const A=S.points[0];
-      const B=(S.points.length>=2) ? S.points[1] : S.lastHit;
+      const B=(S.points.length>=2)?S.points[1]:S.lastHit;
       const m=dist(A,B);
       S.lastValueText = fmtMeters(m);
       if(S.points.length<2){
@@ -375,26 +784,29 @@
 
     if(S.mode==='area'){
       if(S.points.length===4){
-        const a=areaRect(S.points[0],S.points[1],S.points[2],S.points[3]);
+        const w=dist(S.points[0],S.points[1]);
+        const h=dist(S.points[2],S.points[3]);
+        const a=w*h;
         S.lastValueText = fmtArea(a);
       }else if(S.points.length>=2){
-        const w=dist(S.points[0], S.points[1]);
+        const w=dist(S.points[0],S.points[1]);
         S.lastValueText = `Larghezza: ${fmtMeters(w)}`;
       }else{
         S.lastValueText = null;
       }
     }
 
-    drawOverlay(view);
+    drawOverlay();
   }
 
-  // ---- UI wiring ----
+  // UI
   btnCam.addEventListener('click', async () => {
     try{
       await startCamera(arVideo);
       setPill(pillAR,'AR: camera OK','ok');
-      setResult('—','Camera attiva (mirino). Ora premi “Prova AR (WebXR)”.');
-      showVideoHideXR(); // in camera view
+      setResult('—','Camera attiva. Ora premi “Avvia AR”.');
+      arVideo.style.display='block';
+      arGL.style.display='none';
       resizeHud();
     }catch(err){
       setPill(pillAR,'AR: camera KO','bad');
@@ -402,23 +814,23 @@
     }
   });
 
-  btnTry.addEventListener('click', startWebXR);
+  btnXR.addEventListener('click', startXR);
 
-  btnReset.addEventListener('click', () => {
-    resetMeasure();
-  });
+  btnReset.addEventListener('click', resetMeasure);
 
   btnSave.addEventListener('click', () => {
     if(S.mode==='distance' && S.points.length>=2){
-      const m = dist(S.points[0], S.points[1]);
+      const m=dist(S.points[0],S.points[1]);
       addHistory(`AR Distanza: ${fmtMeters(m)}`);
-      btnSave.disabled = true;
+      btnSave.disabled=true;
       setResult('Salvato ✅', `AR Distanza: ${fmtMeters(m)}`);
     }
     if(S.mode==='area' && S.points.length===4){
-      const a = areaRect(S.points[0],S.points[1],S.points[2],S.points[3]);
+      const w=dist(S.points[0],S.points[1]);
+      const h=dist(S.points[2],S.points[3]);
+      const a=w*h;
       addHistory(`AR Area: ${fmtArea(a)}`);
-      btnSave.disabled = true;
+      btnSave.disabled=true;
       setResult('Salvato ✅', `AR Area: ${fmtArea(a)}`);
     }
   });
@@ -432,10 +844,13 @@
   });
 
   // init
-  showVideoHideXR();
-  arGL.style.display = 'none';
   setPill(pillAR,'AR: —','warn');
   pillMode.textContent = 'Modalità: Distanza';
   updateHistory();
   resizeHud();
 })();
+
+show('home');
+</script>
+</body>
+</html>

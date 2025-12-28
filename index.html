@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="it">
 <head>
@@ -12,12 +13,10 @@
       --muted:rgba(29,53,87,.72);
       --border:rgba(29,53,87,.14);
       --shadow:0 10px 28px rgba(29,53,87,.08);
-
       --primary:#1D3557;
       --ok:#26A69A;
       --warn:#FB8C00;
       --bad:#E53935;
-
       --r:18px;
       --r2:14px;
     }
@@ -223,6 +222,7 @@
     <div class="panel">
       <button class="kbtn primary" id="arStartCam">Avvia Fotocamera</button>
       <button class="kbtn primary" id="arStartXR">Avvia AR</button>
+      <button class="kbtn" id="arStopXR" disabled>Esci AR</button>
       <button class="kbtn" id="arReset" disabled>Reset</button>
       <button class="kbtn" id="arSave" disabled>Salva</button>
       <button class="kbtn danger" id="arClearHistory">Azzera storico</button>
@@ -312,7 +312,6 @@ function setPill(el, text, kind){
   el.classList.remove('ok','warn','bad');
   if(kind) el.classList.add(kind);
 }
-
 const httpsOk = (location.protocol === 'https:' || location.hostname === 'localhost') && window.isSecureContext;
 setPill(httpsPill, httpsOk ? 'HTTPS: OK' : 'HTTPS: NO', httpsOk ? 'ok' : 'bad');
 
@@ -443,7 +442,6 @@ async function checkWebXRAR(){
 
   function handleOri(e){
     if(typeof e.beta !== 'number') return;
-    // Nota: su Android spesso funziona bene in portrait con beta.
     T.pitchDeg = -e.beta;
   }
 
@@ -551,7 +549,6 @@ async function checkWebXRAR(){
     const real = parseFloat(s || '');
     if(!Number.isFinite(real) || real <= 0) return;
 
-    // fattore nuovo: (D_raw / D_reale)
     const newFactor = clamp(T.lastRaw.D / real, 0.5, 3.0);
     inF.value = newFactor.toFixed(2);
     localStorage.setItem(LS_F, String(newFactor));
@@ -574,7 +571,7 @@ async function checkWebXRAR(){
   drawCrosshair();
 })();
 
-/* ========= AR WEBXR ========= */
+/* ========= AR WEBXR (fix: makeXRCompatible + gestione uscita) ========= */
 (() => {
   const arVideo = document.getElementById('arVideo');
   const arGL    = document.getElementById('arGL');
@@ -582,6 +579,7 @@ async function checkWebXRAR(){
 
   const btnCam  = document.getElementById('arStartCam');
   const btnXR   = document.getElementById('arStartXR');
+  const btnStop = document.getElementById('arStopXR');
   const btnReset= document.getElementById('arReset');
   const btnSave = document.getElementById('arSave');
   const btnClear= document.getElementById('arClearHistory');
@@ -602,12 +600,15 @@ async function checkWebXRAR(){
     points:[],
     lastHit:null,
     lastText:null,
-    history:[]
+    history:[],
+    running:false
   };
 
   function setResult(m,s){ outMain.textContent=m; outSub.textContent=s||''; }
-  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-
+  function dist(a,b){
+    const dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z;
+    return Math.sqrt(dx*dx+dy*dy+dz*dz);
+  }
   function fmtMeters(m){
     if(!Number.isFinite(m)) return '—';
     if(m>=10) return `${m.toFixed(2)} m`;
@@ -617,10 +618,6 @@ async function checkWebXRAR(){
   function fmtArea(m2){
     if(!Number.isFinite(m2)) return '—';
     return `${m2.toFixed(2)} m²`;
-  }
-  function dist(a,b){
-    const dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z;
-    return Math.sqrt(dx*dx+dy*dy+dz*dz);
   }
   function updateHistory(){
     histList.innerHTML='';
@@ -659,7 +656,6 @@ async function checkWebXRAR(){
     ctx.moveTo(cx,cy-18); ctx.lineTo(cx,cy+18);
     ctx.stroke();
 
-    // testo live
     if(S.lastText){
       ctx.font=`${Math.round(14*(window.devicePixelRatio||1))}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
       ctx.lineWidth=6;
@@ -669,7 +665,6 @@ async function checkWebXRAR(){
       ctx.fillText(S.lastText, cx+22, cy-22);
     }
 
-    // laser "visivo" (semplice)
     if(S.mode==='distance' && S.points.length>=1){
       ctx.save();
       ctx.setLineDash([18,12]);
@@ -689,7 +684,32 @@ async function checkWebXRAR(){
     btnSave.disabled=true;
     setResult('—', S.mode==='distance'
       ? 'AR attivo. Tap 1 = A. Muovi: live. Tap 2 = B.'
-      : 'Area: 4 tap (rettangolo).');
+      : 'Area: 4 tap (rettangolo).'
+    );
+  }
+
+  async function stopXR(){
+    try{ S.hitTestSource?.cancel?.(); }catch{}
+    S.hitTestSource=null;
+
+    if(S.session){
+      try{ await S.session.end(); }catch{}
+    }
+    S.session=null;
+    S.refSpace=null;
+    S.viewerSpace=null;
+    S.running=false;
+
+    arGL.style.display='none';
+    arVideo.style.display='block';
+
+    btnStop.disabled=true;
+    btnReset.disabled=true;
+    btnSave.disabled=true;
+    setPill(pillAR,'AR: fermo','warn');
+
+    // riattiva preview camera (se vuoi)
+    try{ await startCamera(arVideo); }catch{}
   }
 
   async function startXR(){
@@ -700,14 +720,20 @@ async function checkWebXRAR(){
       return;
     }
 
-    // Libera la camera "classica" prima di entrare in WebXR
-    stopCamera();
+    // Consiglio: avvia camera preview prima, poi AR
+    if(!camStream){
+      try{ await startCamera(arVideo); }catch{}
+    }
 
     arVideo.style.display='none';
     arGL.style.display='block';
     resizeGL(); resizeHud();
 
-    const gl = arGL.getContext('webgl', { alpha:true, antialias:true });
+    // FIX CHIAVE: xrCompatible + makeXRCompatible()
+    const gl =
+      arGL.getContext('webgl', { alpha:true, antialias:true, xrCompatible:true }) ||
+      arGL.getContext('webgl', { alpha:true, antialias:true });
+
     if(!gl){
       setPill(pillAR,'AR: WebGL KO','bad');
       setResult('Errore','WebGL non disponibile');
@@ -715,6 +741,7 @@ async function checkWebXRAR(){
       arVideo.style.display='block';
       return;
     }
+    try{ await gl.makeXRCompatible(); }catch{}
     S.gl = gl;
 
     let session;
@@ -732,14 +759,17 @@ async function checkWebXRAR(){
     }
 
     S.session = session;
+    S.running = true;
     setPill(pillAR,'AR: attivo','ok');
+    btnStop.disabled=false;
     btnReset.disabled=false;
 
     session.addEventListener('end', () => {
-      S.session=null; S.hitTestSource=null; S.refSpace=null; S.viewerSpace=null;
+      S.running = false;
       setPill(pillAR,'AR: fermo','warn');
-      btnSave.disabled=true;
+      btnStop.disabled=true;
       btnReset.disabled=true;
+      btnSave.disabled=true;
       arGL.style.display='none';
       arVideo.style.display='block';
       setResult('—','Sessione AR terminata.');
@@ -748,9 +778,15 @@ async function checkWebXRAR(){
     const layer = new XRWebGLLayer(session, gl);
     session.updateRenderState({ baseLayer: layer });
 
-    S.refSpace = await session.requestReferenceSpace('local-floor').catch(async()=>session.requestReferenceSpace('local'));
-    S.viewerSpace = await session.requestReferenceSpace('viewer');
-    S.hitTestSource = await session.requestHitTestSource({ space: S.viewerSpace });
+    try{
+      S.refSpace = await session.requestReferenceSpace('local-floor').catch(async()=>session.requestReferenceSpace('local'));
+      S.viewerSpace = await session.requestReferenceSpace('viewer');
+      S.hitTestSource = await session.requestHitTestSource({ space: S.viewerSpace });
+    }catch(e){
+      setPill(pillAR,'AR: hit-test KO','warn');
+      setResult('Hit-test KO','AR avviato ma hit-test non disponibile.');
+      return;
+    }
 
     session.addEventListener('select', () => {
       if(!S.lastHit) return;
@@ -787,11 +823,15 @@ async function checkWebXRAR(){
       }
     });
 
+    // Ora che XR è attivo, possiamo fermare la camera preview (evita conflitti su alcuni device)
+    stopCamera();
+
     resetMeasure();
     session.requestAnimationFrame(onXRFrame);
   }
 
   function onXRFrame(t, frame){
+    if(!S.running || !S.session) return;
     const session = frame.session;
     const gl = S.gl;
     const layer = session.renderState.baseLayer;
@@ -861,7 +901,7 @@ async function checkWebXRAR(){
   });
 
   btnXR.addEventListener('click', startXR);
-
+  btnStop.addEventListener('click', stopXR);
   btnReset.addEventListener('click', resetMeasure);
 
   btnSave.addEventListener('click', () => {

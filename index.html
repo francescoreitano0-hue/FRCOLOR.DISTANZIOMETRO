@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="it">
 <head>
@@ -93,14 +94,13 @@
     }
     .note.ok{border-color:rgba(38,166,154,.35);background:rgba(38,166,154,.12);color:var(--ok)}
     .note.warn{border-color:rgba(251,140,0,.35);background:rgba(251,140,0,.12);color:rgba(29,53,87,.9)}
+    .note.bad{border-color:rgba(229,57,53,.35);background:rgba(229,57,53,.12);color:rgba(29,53,87,.95)}
 
     .foot{text-align:center;padding:6px 0 2px}
     .muted{color:var(--muted);font-size:12px;font-weight:800}
 
     /* modules */
-    .panel{
-      padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-    }
+    .panel{padding:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
     .kbtn{
       appearance:none;border:1px solid var(--border);background:#fff;color:var(--text);
       padding:10px 12px;border-radius:var(--r2);font-weight:1000;cursor:pointer;
@@ -120,680 +120,330 @@
       height:min(60vh,560px);min-height:360px;
     }
     @media (min-width:860px){.viewer{height:520px}}
-    .xrCanvas,.overlay2d{position:absolute;inset:0;width:100%;height:100%}
-    .overlay2d{pointer-events:none}
+    .overlay2d{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+    .hidden{display:none !important}
+    .small{font-size:12px;font-weight:900;color:var(--muted)}
 
-    .hud{
-      padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+    /* camera video */
+    video.cam{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      background:#0b0f14;
     }
-    .hudBox{
-      flex:1 1 260px;border:1px solid var(--border);background:#fff;border-radius:var(--r2);padding:10px 12px;
-    }
+
+    /* HUD */
+    .hud{padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+    .hudBox{flex:1 1 260px;border:1px solid var(--border);background:#fff;border-radius:var(--r2);padding:10px 12px;}
     .hudLabel{font-size:12px;color:var(--muted);font-weight:1000;letter-spacing:.15px}
     .hudValue{margin-top:4px;font-size:18px;font-weight:1000}
     .hudSub{margin-top:4px;font-size:12px;color:var(--muted);font-weight:900;line-height:1.35}
     .list{margin:0;padding-left:18px;font-weight:900}
-
-    .hidden{display:none !important}
-    .small{font-size:12px;font-weight:900;color:var(--muted)}
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <header class="topbar">
-      <div class="brand">
-        <img class="logo" id="logo" src="logo.png" alt="FR Color" onerror="this.style.display='none'">
-        <div class="brandText">
-          <div class="brandTitle">FR SYSTEM</div>
-          <div class="brandSub" id="subTitle">Seleziona la modalità di misurazione</div>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <img class="logo" src="logo.png" alt="FR Color" onerror="this.style.display='none'">
+      <div class="brandText">
+        <div class="brandTitle">FR SYSTEM</div>
+        <div class="brandSub" id="subTitle">Seleziona la modalità di misurazione</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <span class="pill" id="httpsPill">HTTPS: —</span>
+      <span class="pill" id="camPill">CAM: —</span>
+      <span class="pill" id="arPillTop">AR: —</span>
+      <button class="kbtn hidden" id="btnHome">Home</button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <main class="center" id="homeView">
+    <section class="card hero">
+      <div class="heroHead">
+        <div class="heroTitle">Misure</div>
+        <div class="heroDesc">
+          Telemetro: indicativo con camera + sensori. AR: prova misura reale (solo dispositivi compatibili).
         </div>
-      </div>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <span class="pill" id="httpsPill">HTTPS: —</span>
-        <span class="pill warn" id="arPillTop">AR: —</span>
-        <button class="kbtn hidden" id="btnHome">Home</button>
-      </div>
-    </header>
-
-    <!-- HOME -->
-    <main class="center" id="homeView">
-      <section class="card hero">
-        <div class="heroHead">
-          <div class="heroTitle">Misure</div>
-          <div class="heroDesc">
-            Scegli la funzione. AR misura nello spazio (serve dispositivo compatibile). Telemetro è indicativo e funziona ovunque.
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="grid2">
-          <button class="btn big ghost" id="goTele">
-            <div class="btnTitle">Telemetro</div>
-            <div class="btnDesc">Indicativo • Esterni ok • Nessun AR richiesto</div>
-          </button>
-
-          <button class="btn big primary" id="goAR">
-            <div class="btnTitle">AR Misure</div>
-            <div class="btnDesc">Reale nello spazio • Richiede WebXR AR</div>
-          </button>
-        </div>
-
-        <div class="note" id="compatNote">Verifica compatibilità AR in corso…</div>
-      </section>
-    </main>
-
-    <!-- AR VIEW -->
-    <section class="card hidden" id="arView">
-      <div class="panel">
-        <button class="kbtn primary" id="arStart">Avvia AR</button>
-        <button class="kbtn" id="arReset" disabled>Reset</button>
-        <button class="kbtn" id="arSave" disabled>Salva</button>
-        <button class="kbtn danger" id="arClearHistory">Azzera storico</button>
-
-        <span class="pill" id="arPill">AR: —</span>
-        <span class="pill" id="arModePill">Modalità: Distanza</span>
-
-        <select class="kbtn" id="arModeSel" style="padding:10px 12px;">
-          <option value="distance" selected>Distanza</option>
-          <option value="area">Area (rettangolo)</option>
-        </select>
-      </div>
-
-      <div class="viewer" id="arViewer">
-        <canvas class="xrCanvas" id="glCanvas"></canvas>
-        <canvas class="overlay2d" id="hudCanvas"></canvas>
-      </div>
-
-      <div class="hud">
-        <div class="hudBox">
-          <div class="hudLabel">Risultato</div>
-          <div class="hudValue" id="arOutMain">—</div>
-          <div class="hudSub" id="arOutSub">Tocca “Avvia AR”, poi punta il mirino (centro schermo) e tocca lo schermo.</div>
-        </div>
-
-        <div class="hudBox">
-          <div class="hudLabel" id="arHistLabel">Storico misure (0/10)</div>
-          <ol class="list" id="arHistList"></ol>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="note warn" style="margin:0; width:100%;">
-          AR richiede HTTPS + dispositivo compatibile. Se non supportato, usa Telemetro.
-        </div>
-      </div>
-    </section>
-
-    <!-- TELEMETRO VIEW -->
-    <section class="card hidden" id="teleView">
-      <div class="panel">
-        <button class="kbtn primary" id="tEnable">Attiva sensori</button>
-        <button class="kbtn" id="tBase" disabled>Tap Base</button>
-        <button class="kbtn" id="tTop" disabled>Tap Alto</button>
-        <button class="kbtn" id="tReset" disabled>Reset</button>
-        <button class="kbtn" id="tSave" disabled>Salva</button>
-        <button class="kbtn danger" id="tClearHistory">Azzera storico</button>
-        <span class="pill warn" id="tPill">Sensori: —</span>
-      </div>
-
-      <div class="panel" style="padding-top:0;">
-        <div class="small">Altezza telefono da terra (cm)</div>
-        <input class="kbtn" id="tHeight" type="number" min="50" max="250" step="1" value="150" style="width:220px;" />
-        <span class="small">Misura una volta e lascialo fisso</span>
       </div>
 
       <div class="divider"></div>
 
-      <div class="hud">
-        <div class="hudBox">
-          <div class="hudLabel">Risultato</div>
-          <div class="hudValue" id="tOutMain">—</div>
-          <div class="hudSub" id="tOutSub">
-            Procedura: punta BASE (pavimento/inizio parete) → “Tap Base”.
-            Poi punta ALTO → “Tap Alto”. Risultato indicativo.
-          </div>
-        </div>
+      <div class="grid2">
+        <button class="btn big ghost" id="goTele">
+          <div class="btnTitle">Telemetro</div>
+          <div class="btnDesc">Camera + sensori • Indicativo • Sempre disponibile</div>
+        </button>
 
-        <div class="hudBox">
-          <div class="hudLabel" id="tHistLabel">Storico misure (0/10)</div>
-          <ol class="list" id="tHistList"></ol>
-        </div>
+        <button class="btn big primary" id="goAR">
+          <div class="btnTitle">AR Misure</div>
+          <div class="btnDesc">Prova WebXR AR • Se non compatibile resta solo camera</div>
+        </button>
       </div>
 
-      <div class="panel">
-        <div class="note warn" style="margin:0; width:100%;">
-          Telemetro = trigonometria con inclinazione. Su 20–30 m sono normali errori grandi (per te ok).
-        </div>
-      </div>
+      <div class="note" id="compatNote">Controllo compatibilità e camera…</div>
     </section>
+  </main>
 
-    <footer class="foot">
-      <span class="muted">FR Color • Stile e colori ufficiali</span>
-    </footer>
-  </div>
+  <!-- TELEMETRO VIEW -->
+  <section class="card hidden" id="teleView">
+    <div class="panel">
+      <button class="kbtn primary" id="tStartCam">Avvia Fotocamera</button>
+      <button class="kbtn" id="tEnableSensors">Attiva sensori</button>
+      <button class="kbtn" id="tBase" disabled>Tap Base</button>
+      <button class="kbtn" id="tTop" disabled>Tap Alto</button>
+      <button class="kbtn" id="tReset" disabled>Reset</button>
+      <button class="kbtn" id="tSave" disabled>Salva</button>
+      <button class="kbtn danger" id="tClearHistory">Azzera storico</button>
+      <span class="pill warn" id="tPill">Stato: —</span>
+    </div>
+
+    <div class="panel" style="padding-top:0;">
+      <div class="small">Altezza telefono da terra (cm)</div>
+      <input class="kbtn" id="tHeight" type="number" min="50" max="250" step="1" value="150" style="width:220px;" />
+      <span class="small">Consiglio: imposta una volta e lascia fisso</span>
+    </div>
+
+    <div class="viewer" id="tViewer">
+      <video class="cam" id="tVideo" playsinline muted autoplay></video>
+      <canvas class="overlay2d" id="tHud"></canvas>
+    </div>
+
+    <div class="hud">
+      <div class="hudBox">
+        <div class="hudLabel">Risultato</div>
+        <div class="hudValue" id="tOutMain">—</div>
+        <div class="hudSub" id="tOutSub">
+          1) Avvia Fotocamera  2) Attiva sensori  3) Punta BASE → Tap Base  4) Punta ALTO → Tap Alto
+        </div>
+      </div>
+
+      <div class="hudBox">
+        <div class="hudLabel" id="tHistLabel">Storico misure (0/10)</div>
+        <ol class="list" id="tHistList"></ol>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="note warn" style="margin:0; width:100%;">
+        Telemetro = trigonometria. Su 20–30 m è normale avere errore grande (per te ok).
+      </div>
+    </div>
+  </section>
+
+  <!-- AR VIEW -->
+  <section class="card hidden" id="arView">
+    <div class="panel">
+      <button class="kbtn primary" id="arStartCam">Avvia Fotocamera</button>
+      <button class="kbtn primary" id="arTryWebXR">Prova AR (WebXR)</button>
+      <button class="kbtn" id="arReset" disabled>Reset</button>
+      <button class="kbtn" id="arSave" disabled>Salva</button>
+      <button class="kbtn danger" id="arClearHistory">Azzera storico</button>
+
+      <span class="pill" id="arPill">AR: —</span>
+      <span class="pill" id="arModePill">Modalità: Distanza</span>
+
+      <select class="kbtn" id="arModeSel" style="padding:10px 12px;">
+        <option value="distance" selected>Distanza</option>
+        <option value="area">Area (rettangolo)</option>
+      </select>
+    </div>
+
+    <div class="viewer" id="arViewer">
+      <video class="cam" id="arVideo" playsinline muted autoplay></video>
+      <canvas class="overlay2d" id="arHud"></canvas>
+    </div>
+
+    <div class="hud">
+      <div class="hudBox">
+        <div class="hudLabel">Risultato</div>
+        <div class="hudValue" id="arOutMain">—</div>
+        <div class="hudSub" id="arOutSub">
+          Avvia Fotocamera per mirino. Poi “Prova AR (WebXR)”: se supportato attiva misure reali.
+        </div>
+      </div>
+
+      <div class="hudBox">
+        <div class="hudLabel" id="arHistLabel">Storico misure (0/10)</div>
+        <ol class="list" id="arHistList"></ol>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="note warn" style="margin:0; width:100%;">
+        Se WebXR AR non è supportato, qui vedrai SOLO camera (senza misura 3D reale).
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span class="muted">FR Color • Stile e colori ufficiali</span>
+  </footer>
+</div>
 
 <script>
-/* =========================
-   ROUTER (single file)
-========================= */
+/* ========= ROUTER ========= */
 const homeView = document.getElementById('homeView');
-const arView = document.getElementById('arView');
+const arView   = document.getElementById('arView');
 const teleView = document.getElementById('teleView');
-const btnHome = document.getElementById('btnHome');
+const btnHome  = document.getElementById('btnHome');
 const subTitle = document.getElementById('subTitle');
 
 function show(view){
   homeView.classList.add('hidden');
   arView.classList.add('hidden');
   teleView.classList.add('hidden');
-
   btnHome.classList.remove('hidden');
 
-  if (view === 'home') {
+  if(view==='home'){
     homeView.classList.remove('hidden');
     btnHome.classList.add('hidden');
     subTitle.textContent = 'Seleziona la modalità di misurazione';
   }
-  if (view === 'ar') {
-    arView.classList.remove('hidden');
-    subTitle.textContent = 'AR Misure • Distanza e Area • Storico 10';
-  }
-  if (view === 'tele') {
+  if(view==='tele'){
     teleView.classList.remove('hidden');
-    subTitle.textContent = 'Telemetro • Indicativo • Esterni OK';
+    subTitle.textContent = 'Telemetro • Camera + sensori • Indicativo';
+  }
+  if(view==='ar'){
+    arView.classList.remove('hidden');
+    subTitle.textContent = 'AR Misure • Camera + tentativo WebXR';
   }
 }
 btnHome.addEventListener('click', () => show('home'));
 document.getElementById('goTele').addEventListener('click', () => show('tele'));
 document.getElementById('goAR').addEventListener('click', () => show('ar'));
 
-/* =========================
-   HOME AR compatibility check
-========================= */
+/* ========= STATUS PILLS ========= */
 const httpsPill = document.getElementById('httpsPill');
+const camPill   = document.getElementById('camPill');
 const arPillTop = document.getElementById('arPillTop');
-const compatNote = document.getElementById('compatNote');
-const goAR = document.getElementById('goAR');
+const compatNote= document.getElementById('compatNote');
+
+function setPill(el, text, kind){
+  el.textContent = text;
+  el.classList.remove('ok','warn','bad');
+  if(kind) el.classList.add(kind);
+}
 
 const httpsOk = (location.protocol === 'https:' || location.hostname === 'localhost') && window.isSecureContext;
-httpsPill.textContent = httpsOk ? 'HTTPS: OK' : 'HTTPS: NO';
-httpsPill.classList.toggle('ok', httpsOk);
-httpsPill.classList.toggle('bad', !httpsOk);
+setPill(httpsPill, httpsOk ? 'HTTPS: OK' : 'HTTPS: NO', httpsOk ? 'ok' : 'bad');
 
-async function checkAR(){
-  if (!httpsOk){
-    arPillTop.textContent = 'AR: HTTPS richiesto';
-    arPillTop.className = 'pill warn';
-    compatNote.textContent = 'AR richiede HTTPS (Netlify ok).';
-    compatNote.className = 'note warn';
-    goAR.classList.add('disabled');
-    return false;
+/* ========= CAMERA (shared) ========= */
+let camStream = null;
+
+async function startCamera(videoEl){
+  if(!httpsOk) throw new Error('HTTPS richiesto');
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia non supportato');
+
+  // se già aperta, riusa stream
+  if(camStream){
+    videoEl.srcObject = camStream;
+    await videoEl.play().catch(()=>{});
+    return;
   }
-  if (!('xr' in navigator)){
-    arPillTop.textContent = 'AR: WebXR NO';
-    arPillTop.className = 'pill bad';
-    compatNote.textContent = 'Questo browser non supporta WebXR.';
-    compatNote.className = 'note warn';
-    goAR.classList.add('disabled');
-    return false;
-  }
+  camStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" } },
+    audio: false
+  });
+  videoEl.srcObject = camStream;
+  await videoEl.play().catch(()=>{});
+  setPill(camPill,'CAM: OK','ok');
+}
+
+function stopCamera(){
+  if(!camStream) return;
+  camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  setPill(camPill,'CAM: OFF','warn');
+}
+
+/* ========= WEBXR SUPPORT CHECK ========= */
+async function checkWebXRAR(){
+  if(!httpsOk) return false;
+  if(!('xr' in navigator)) return false;
   try{
-    const ok = await navigator.xr.isSessionSupported('immersive-ar');
-    if (!ok){
-      arPillTop.textContent = 'AR: non disponibile';
-      arPillTop.className = 'pill bad';
-      compatNote.textContent = 'AR non disponibile su questo dispositivo (serve compatibilità AR).';
-      compatNote.className = 'note warn';
-      goAR.classList.add('disabled');
-      return false;
-    }
-    arPillTop.textContent = 'AR: disponibile ✅';
-    arPillTop.className = 'pill ok';
-    compatNote.textContent = 'AR disponibile ✅';
-    compatNote.className = 'note ok';
-    goAR.classList.remove('disabled');
-    return true;
+    return await navigator.xr.isSessionSupported('immersive-ar');
   }catch{
-    arPillTop.textContent = 'AR: check KO';
-    arPillTop.className = 'pill warn';
-    compatNote.textContent = 'Impossibile verificare AR. Prova su un altro dispositivo.';
-    compatNote.className = 'note warn';
-    goAR.classList.add('disabled');
     return false;
   }
 }
-checkAR();
 
-/* =========================
-   AR MODULE (WebXR)
-========================= */
+(async () => {
+  setPill(camPill,'CAM: —','warn');
+  const arOk = await checkWebXRAR();
+  setPill(arPillTop, arOk ? 'AR: possibile' : 'AR: non disponibile', arOk ? 'ok' : 'warn');
+  compatNote.textContent = arOk
+    ? 'WebXR AR sembra disponibile su questo dispositivo. La camera si apre con il pulsante.'
+    : 'WebXR AR non disponibile qui. Telemetro funziona comunque (camera + sensori).';
+  compatNote.className = 'note ' + (arOk ? 'ok' : 'warn');
+})();
+
+/* ========= TELEMETRO MODULE ========= */
 (() => {
-  const btnStart = document.getElementById('arStart');
-  const btnReset = document.getElementById('arReset');
-  const btnSave  = document.getElementById('arSave');
-  const btnClear = document.getElementById('arClearHistory');
-  const pillAR   = document.getElementById('arPill');
-  const pillMode = document.getElementById('arModePill');
-  const modeSel  = document.getElementById('arModeSel');
+  const tVideo = document.getElementById('tVideo');
+  const tHud   = document.getElementById('tHud');
+  const btnCam = document.getElementById('tStartCam');
+  const btnSen = document.getElementById('tEnableSensors');
+  const btnBase= document.getElementById('tBase');
+  const btnTop = document.getElementById('tTop');
+  const btnReset=document.getElementById('tReset');
+  const btnSave=document.getElementById('tSave');
+  const btnClear=document.getElementById('tClearHistory');
+  const pill   = document.getElementById('tPill');
+  const inH    = document.getElementById('tHeight');
+  const outMain= document.getElementById('tOutMain');
+  const outSub = document.getElementById('tOutSub');
+  const histLbl= document.getElementById('tHistLabel');
+  const histList=document.getElementById('tHistList');
 
-  const outMain  = document.getElementById('arOutMain');
-  const outSub   = document.getElementById('arOutSub');
-  const histLbl  = document.getElementById('arHistLabel');
-  const histList = document.getElementById('arHistList');
+  const T = { pitchDeg:null, basePitch:null, topPitch:null, last:null, history:[] };
 
-  const glCanvas = document.getElementById('glCanvas');
-  const hudCanvas= document.getElementById('hudCanvas');
-
-  const S = {
-    session:null, gl:null, refSpace:null, viewerSpace:null, hitTestSource:null,
-    mode:'distance',
-    points:[], lastHit:null, lastValueText:null,
-    history:[]
-  };
-
-  function setPill(el, text, kind){
-    el.textContent = text;
-    el.classList.remove('ok','warn','bad');
-    if (kind) el.classList.add(kind);
+  function set(text,kind){
+    pill.textContent = text;
+    pill.classList.remove('ok','warn','bad');
+    if(kind) pill.classList.add(kind);
   }
-  function setResult(m,s){ outMain.textContent=m; outSub.textContent=s||''; }
-  function fmtMeters(m){
-    if (!Number.isFinite(m)) return '—';
-    if (m >= 10) return `${m.toFixed(2)} m`;
-    if (m >= 1) return `${m.toFixed(3)} m`;
+  function rad(d){ return d*Math.PI/180; }
+  function fmt(m){
+    if(!Number.isFinite(m)) return '—';
+    if(m>=10) return `${m.toFixed(2)} m`;
+    if(m>=1) return `${m.toFixed(3)} m`;
     return `${(m*100).toFixed(1)} cm`;
   }
-  function fmtArea(m2){ return Number.isFinite(m2) ? `${m2.toFixed(2)} m²` : '—'; }
-
-  function updateHistoryUI(){
-    histList.innerHTML = '';
-    S.history.forEach(h => { const li=document.createElement('li'); li.textContent=h; histList.appendChild(li); });
-    histLbl.textContent = `Storico misure (${S.history.length}/10)`;
+  function updateHistory(){
+    histList.innerHTML='';
+    T.history.forEach(x=>{const li=document.createElement('li'); li.textContent=x; histList.appendChild(li);});
+    histLbl.textContent = `Storico misure (${T.history.length}/10)`;
   }
-  function addHistory(text){
-    if (S.history.length === 10) S.history = [];
-    S.history.push(text);
-    updateHistoryUI();
+  function addHistory(x){
+    if(T.history.length===10) T.history=[];
+    T.history.push(x);
+    updateHistory();
   }
-
-  function resetMeasure(){
-    S.points = [];
-    S.lastValueText = null;
-    btnSave.disabled = true;
-    btnReset.disabled = true;
-    setResult('—', S.mode==='distance'
-      ? 'Tocca 1 volta per A, 2ª volta per B. Valore live mentre muovi.'
-      : 'Area: 4 tocchi (rettangolo). Dopo il 4° tocchi puoi salvare.'
-    );
-  }
-
-  function dist(a,b){
-    const dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z;
-    return Math.sqrt(dx*dx+dy*dy+dz*dz);
-  }
-  function areaRect(p1,p2,p3,p4){
-    const w = dist(p1,p2);
-    const h = dist(p3,p4);
-    return w*h;
-  }
-
-  function resizeCanvases(){
+  function drawCrosshair(){
     const dpr = window.devicePixelRatio || 1;
-    const rect = glCanvas.getBoundingClientRect();
-    glCanvas.width  = Math.max(1, Math.round(rect.width * dpr));
-    glCanvas.height = Math.max(1, Math.round(rect.height * dpr));
-    hudCanvas.width = glCanvas.width;
-    hudCanvas.height= glCanvas.height;
-  }
-
-  // minimal mat4 inversion + mul for projection
-  function mat4Invert(a){
-    const inv = new Float32Array(16);
-    inv[0]=a[5]*a[10]*a[15]-a[5]*a[11]*a[14]-a[9]*a[6]*a[15]+a[9]*a[7]*a[14]+a[13]*a[6]*a[11]-a[13]*a[7]*a[10];
-    inv[4]=-a[4]*a[10]*a[15]+a[4]*a[11]*a[14]+a[8]*a[6]*a[15]-a[8]*a[7]*a[14]-a[12]*a[6]*a[11]+a[12]*a[7]*a[10];
-    inv[8]=a[4]*a[9]*a[15]-a[4]*a[11]*a[13]-a[8]*a[5]*a[15]+a[8]*a[7]*a[13]+a[12]*a[5]*a[11]-a[12]*a[7]*a[9];
-    inv[12]=-a[4]*a[9]*a[14]+a[4]*a[10]*a[13]+a[8]*a[5]*a[14]-a[8]*a[6]*a[13]-a[12]*a[5]*a[10]+a[12]*a[6]*a[9];
-    inv[1]=-a[1]*a[10]*a[15]+a[1]*a[11]*a[14]+a[9]*a[2]*a[15]-a[9]*a[3]*a[14]-a[13]*a[2]*a[11]+a[13]*a[3]*a[10];
-    inv[5]=a[0]*a[10]*a[15]-a[0]*a[11]*a[14]-a[8]*a[2]*a[15]+a[8]*a[3]*a[14]+a[12]*a[2]*a[11]-a[12]*a[3]*a[10];
-    inv[9]=-a[0]*a[9]*a[15]+a[0]*a[11]*a[13]+a[8]*a[1]*a[15]-a[8]*a[3]*a[13]-a[12]*a[1]*a[11]+a[12]*a[3]*a[9];
-    inv[13]=a[0]*a[9]*a[14]-a[0]*a[10]*a[13]-a[8]*a[1]*a[14]+a[8]*a[2]*a[13]+a[12]*a[1]*a[10]-a[12]*a[2]*a[9];
-    inv[2]=a[1]*a[6]*a[15]-a[1]*a[7]*a[14]-a[5]*a[2]*a[15]+a[5]*a[3]*a[14]+a[13]*a[2]*a[7]-a[13]*a[3]*a[6];
-    inv[6]=-a[0]*a[6]*a[15]+a[0]*a[7]*a[14]+a[4]*a[2]*a[15]-a[4]*a[3]*a[14]-a[12]*a[2]*a[7]+a[12]*a[3]*a[6];
-    inv[10]=a[0]*a[5]*a[15]-a[0]*a[7]*a[13]-a[4]*a[1]*a[15]+a[4]*a[3]*a[13]+a[12]*a[1]*a[7]-a[12]*a[3]*a[5];
-    inv[14]=-a[0]*a[5]*a[14]+a[0]*a[6]*a[13]+a[4]*a[1]*a[14]-a[4]*a[2]*a[13]-a[12]*a[1]*a[6]+a[12]*a[2]*a[5];
-    inv[3]=-a[1]*a[6]*a[11]+a[1]*a[7]*a[10]+a[5]*a[2]*a[11]-a[5]*a[3]*a[10]-a[9]*a[2]*a[7]+a[9]*a[3]*a[6];
-    inv[7]=a[0]*a[6]*a[11]-a[0]*a[7]*a[10]-a[4]*a[2]*a[11]+a[4]*a[3]*a[10]+a[8]*a[2]*a[7]-a[8]*a[3]*a[6];
-    inv[11]=-a[0]*a[5]*a[11]+a[0]*a[7]*a[9]+a[4]*a[1]*a[11]-a[4]*a[3]*a[9]-a[8]*a[1]*a[7]+a[8]*a[3]*a[5];
-    inv[15]=a[0]*a[5]*a[10]-a[0]*a[6]*a[9]-a[4]*a[1]*a[10]+a[4]*a[2]*a[9]+a[8]*a[1]*a[6]-a[8]*a[2]*a[5];
-    let det=a[0]*inv[0]+a[1]*inv[4]+a[2]*inv[8]+a[3]*inv[12];
-    if(!det) return null;
-    det=1.0/det;
-    for(let i=0;i<16;i++) inv[i]*=det;
-    return inv;
-  }
-  function mat4Mul(a,b){
-    const o=new Float32Array(16);
-    for(let i=0;i<4;i++){
-      for(let j=0;j<4;j++){
-        o[j+i*4]=a[i*4+0]*b[j+0]+a[i*4+1]*b[j+4]+a[i*4+2]*b[j+8]+a[i*4+3]*b[j+12];
-      }
-    }
-    return o;
-  }
-  function projectPoint(pt, view){
-    const proj=view.projectionMatrix;
-    const camM=view.transform.matrix;
-    const viewM=mat4Invert(camM);
-    if(!viewM) return null;
-    const vp=mat4Mul(proj, viewM);
-    const x=pt.x,y=pt.y,z=pt.z;
-    const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12];
-    const clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];
-    const clipW=vp[3]*x+vp[7]*y+vp[11]*z+vp[15];
-    if(!clipW) return null;
-    const ndcX=clipX/clipW, ndcY=clipY/clipW;
-    const cw=hudCanvas.width, ch=hudCanvas.height;
-    return { x:(ndcX*0.5+0.5)*cw, y:(-ndcY*0.5+0.5)*ch };
-  }
-
-  function draw2D(view){
-    const ctx=hudCanvas.getContext('2d');
-    ctx.clearRect(0,0,hudCanvas.width,hudCanvas.height);
-
-    // crosshair
-    const cx=hudCanvas.width/2, cy=hudCanvas.height/2;
-    ctx.save();
-    ctx.strokeStyle='rgba(245,245,247,.9)';
+    const rect = tVideo.getBoundingClientRect();
+    tHud.width  = Math.max(1, Math.round(rect.width * dpr));
+    tHud.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = tHud.getContext('2d');
+    ctx.clearRect(0,0,tHud.width,tHud.height);
+    const cx = tHud.width/2, cy = tHud.height/2;
+    ctx.strokeStyle='rgba(245,245,247,.92)';
     ctx.lineWidth=2;
     ctx.beginPath();
     ctx.moveTo(cx-18,cy); ctx.lineTo(cx+18,cy);
     ctx.moveTo(cx,cy-18); ctx.lineTo(cx,cy+18);
     ctx.stroke();
-    ctx.restore();
-
-    // distance laser
-    if(S.mode==='distance' && S.points.length>=1){
-      const A=S.points[0];
-      const B=(S.points.length>=2)?S.points[1]:S.lastHit;
-      if(B && view){
-        const pA=projectPoint(A,view), pB=projectPoint(B,view);
-        if(pA && pB){
-          ctx.save();
-          ctx.setLineDash([18,12]);
-          ctx.strokeStyle='rgba(245,245,247,.92)';
-          ctx.lineWidth=3;
-          ctx.beginPath(); ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y); ctx.stroke();
-
-          if(S.lastValueText){
-            const midX=(pA.x+pB.x)/2, midY=(pA.y+pB.y)/2;
-            ctx.setLineDash([]);
-            ctx.font=`${Math.round(14*(window.devicePixelRatio||1))}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
-            ctx.lineWidth=6;
-            ctx.strokeStyle='rgba(11,15,20,.35)';
-            ctx.fillStyle='rgba(245,245,247,.95)';
-            ctx.strokeText(S.lastValueText, midX+18, midY-18);
-            ctx.fillText(S.lastValueText, midX+18, midY-18);
-          }
-          ctx.restore();
-        }
-      }
-    }
-
-    // area segments (simple)
-    if(S.mode==='area' && S.points.length>0 && view){
-      ctx.save();
-      ctx.strokeStyle='rgba(245,245,247,.92)';
-      ctx.lineWidth=3;
-      ctx.setLineDash([14,10]);
-
-      for(let i=0;i<S.points.length-1;i++){
-        const p1=projectPoint(S.points[i],view);
-        const p2=projectPoint(S.points[i+1],view);
-        if(p1&&p2){ ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); }
-      }
-      if(S.points.length<4 && S.lastHit){
-        const p1=projectPoint(S.points[S.points.length-1],view);
-        const p2=projectPoint(S.lastHit,view);
-        if(p1&&p2){ ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); }
-      }
-      ctx.restore();
-    }
   }
 
-  async function startAR(){
-    const ok = await checkAR();
-    if (!ok){
-      setPill(pillAR,'AR: non disponibile','bad');
-      setResult('Non compatibile','Usa Telemetro su questo dispositivo.');
-      return;
-    }
+  window.addEventListener('resize', drawCrosshair);
 
-    const gl = glCanvas.getContext('webgl', { alpha:true, antialias:true });
-    if(!gl){
-      setPill(pillAR,'AR: WebGL KO','bad');
-      setResult('Errore','WebGL non disponibile.');
-      return;
-    }
-    S.gl = gl;
-    resizeCanvases();
-
-    const session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures:['hit-test'],
-      optionalFeatures:['local-floor','dom-overlay'],
-      domOverlay:{root:document.body}
-    });
-
-    S.session = session;
-
-    session.addEventListener('end', () => {
-      S.session=null; S.hitTestSource=null; S.refSpace=null; S.viewerSpace=null;
-      btnStart.disabled=false;
-      btnReset.disabled=true;
-      btnSave.disabled=true;
-      setPill(pillAR,'AR: fermo','warn');
-      setResult('—','Sessione terminata');
-    });
-
-    const layer = new XRWebGLLayer(session, gl);
-    session.updateRenderState({ baseLayer: layer });
-
-    S.refSpace = await session.requestReferenceSpace('local-floor').catch(async() => session.requestReferenceSpace('local'));
-    S.viewerSpace = await session.requestReferenceSpace('viewer');
-    S.hitTestSource = await session.requestHitTestSource({ space: S.viewerSpace });
-
-    session.addEventListener('select', () => {
-      if(!S.lastHit) return;
-
-      if(S.mode==='distance'){
-        if(S.points.length===0){
-          S.points=[S.lastHit];
-          btnReset.disabled=false;
-          btnSave.disabled=true;
-          setResult('Distanza (live)','Muovi: valore live. Tocca per fissare B.');
-        }else if(S.points.length===1){
-          S.points=[S.points[0], S.lastHit];
-          btnSave.disabled=false;
-          setResult('Distanza pronta', S.lastValueText || '—');
-        }else{
-          S.points=[S.lastHit];
-          btnSave.disabled=true;
-          setResult('Distanza (live)','Nuovo A impostato. Tocca per fissare B.');
-        }
-      }else{
-        if(S.points.length<4){
-          S.points.push(S.lastHit);
-          btnReset.disabled=false;
-          if(S.points.length===4){
-            btnSave.disabled=false;
-            setResult('Area pronta', S.lastValueText || '—');
-          }else{
-            btnSave.disabled=true;
-            setResult('Area', `Punti: ${S.points.length}/4 (tocca per aggiungere)`);
-          }
-        }else{
-          S.points=[S.lastHit];
-          btnSave.disabled=true;
-          setResult('Area','Riparti: punti 1/4');
-        }
-      }
-    });
-
-    btnStart.disabled=true;
-    btnReset.disabled=false;
-    setPill(pillAR,'AR: attivo','ok');
-    resetMeasure();
-    session.requestAnimationFrame(onXRFrame);
-  }
-
-  function onXRFrame(t, frame){
-    const session = frame.session;
-    const gl = S.gl;
-    const layer = session.renderState.baseLayer;
-
-    session.requestAnimationFrame(onXRFrame);
-
-    const pose = frame.getViewerPose(S.refSpace);
-    if(!pose) return;
-
-    const view = pose.views[0];
-    const vp = layer.getViewport(view);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
-    gl.viewport(vp.x, vp.y, vp.width, vp.height);
-    gl.clearColor(0,0,0,0);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // center hit-test (mirino)
-    const hits = frame.getHitTestResults(S.hitTestSource);
-    if(hits.length){
-      const hitPose = hits[0].getPose(S.refSpace);
-      if(hitPose){
-        const p = hitPose.transform.position;
-        S.lastHit = { x:p.x, y:p.y, z:p.z };
-      }
-    }
-
-    // live value
-    if(S.mode==='distance' && S.points.length>=1 && S.lastHit){
-      const A=S.points[0];
-      const B=(S.points.length>=2)?S.points[1]:S.lastHit;
-      const m=dist(A,B);
-      S.lastValueText = fmtMeters(m);
-      if(S.points.length<2){
-        setResult('Distanza (live)', `${S.lastValueText} • tocchi per fissare B`);
-      }
-    }
-
-    if(S.mode==='area'){
-      if(S.points.length===4){
-        const a=areaRect(S.points[0],S.points[1],S.points[2],S.points[3]);
-        S.lastValueText = fmtArea(a);
-      }else if(S.points.length>=2){
-        const w=dist(S.points[0],S.points[1]);
-        S.lastValueText = `Larghezza: ${fmtMeters(w)}`;
-      }else{
-        S.lastValueText = null;
-      }
-    }
-
-    draw2D(view);
-  }
-
-  // UI events
-  btnStart.addEventListener('click', startAR);
-  btnReset.addEventListener('click', resetMeasure);
-
-  btnSave.addEventListener('click', () => {
-    if(S.mode==='distance' && S.points.length>=2){
-      const m=dist(S.points[0],S.points[1]);
-      addHistory(`Distanza: ${fmtMeters(m)}`);
-      btnSave.disabled=true;
-      setResult('Salvato ✅', `Distanza: ${fmtMeters(m)}`);
-    }
-    if(S.mode==='area' && S.points.length===4){
-      const a=areaRect(S.points[0],S.points[1],S.points[2],S.points[3]);
-      addHistory(`Area: ${fmtArea(a)}`);
-      btnSave.disabled=true;
-      setResult('Salvato ✅', `Area: ${fmtArea(a)}`);
-    }
-  });
-
-  btnClear.addEventListener('click', () => { S.history=[]; updateHistoryUI(); });
-
-  modeSel.addEventListener('change', () => {
-    S.mode = modeSel.value;
-    pillMode.textContent = `Modalità: ${S.mode==='distance' ? 'Distanza' : 'Area'}`;
-    resetMeasure();
-  });
-
-  window.addEventListener('resize', () => { resizeCanvases(); });
-
-  // init
-  setPill(pillAR,'AR: —','warn');
-  updateHistoryUI();
-  resetMeasure();
-  pillMode.textContent = 'Modalità: Distanza';
-
-})();
-
-/* =========================
-   TELEMETRO MODULE
-========================= */
-(() => {
-  const btnEnable = document.getElementById('tEnable');
-  const btnBase   = document.getElementById('tBase');
-  const btnTop    = document.getElementById('tTop');
-  const btnReset  = document.getElementById('tReset');
-  const btnSave   = document.getElementById('tSave');
-  const btnClear  = document.getElementById('tClearHistory');
-
-  const pill      = document.getElementById('tPill');
-  const inHeight  = document.getElementById('tHeight');
-
-  const outMain   = document.getElementById('tOutMain');
-  const outSub    = document.getElementById('tOutSub');
-
-  const histLbl   = document.getElementById('tHistLabel');
-  const histList  = document.getElementById('tHistList');
-
-  const T = {
-    pitchDeg:null,
-    basePitchDeg:null,
-    topPitchDeg:null,
-    lastResult:null,
-    history:[]
-  };
-
-  function setPill(text, kind){
-    pill.textContent = text;
-    pill.classList.remove('ok','warn','bad');
-    if(kind) pill.classList.add(kind);
-  }
-  function rad(deg){ return deg*Math.PI/180; }
-  function fmt(m){
-    if(!Number.isFinite(m)) return '—';
-    if(m>=10) return `${m.toFixed(2)} m`;
-    if(m>=1)  return `${m.toFixed(3)} m`;
-    return `${(m*100).toFixed(1)} cm`;
-  }
-
-  function updateHistoryUI(){
-    histList.innerHTML = '';
-    T.history.forEach(x => { const li=document.createElement('li'); li.textContent=x; histList.appendChild(li); });
-    histLbl.textContent = `Storico misure (${T.history.length}/10)`;
-  }
-  function addHistory(text){
-    if(T.history.length===10) T.history = [];
-    T.history.push(text);
-    updateHistoryUI();
-  }
-
-  function handleOrientation(e){
+  function handleOri(e){
     if(typeof e.beta !== 'number') return;
-    // convention: pitch positive when aiming UP (we invert beta)
-    T.pitchDeg = -e.beta;
+    T.pitchDeg = -e.beta; // su positivo
   }
 
   async function enableSensors(){
@@ -803,92 +453,196 @@ checkAR();
         const res = await DeviceOrientationEvent.requestPermission();
         if(res !== 'granted') throw new Error('Permission denied');
       }
-      window.addEventListener('deviceorientation', handleOrientation, true);
-      setPill('Sensori: OK','ok');
+      window.addEventListener('deviceorientation', handleOri, true);
+      set('Sensori: OK','ok');
       btnBase.disabled=false;
       btnTop.disabled=false;
       btnReset.disabled=false;
-      outSub.textContent = 'Sensori attivi. Punta BASE → Tap Base. Poi punta ALTO → Tap Alto.';
+      outSub.textContent='Sensori attivi. Punta BASE → Tap Base. Poi punta ALTO → Tap Alto.';
     }catch{
-      setPill('Sensori: KO','bad');
-      outSub.textContent = 'Impossibile attivare sensori. Prova Chrome/permessi movimento.';
+      set('Sensori: KO','bad');
+      outSub.textContent='Non riesco ad attivare i sensori. Controlla permessi “Movimento” (se presenti).';
     }
-  }
-
-  function reset(){
-    T.basePitchDeg=null;
-    T.topPitchDeg=null;
-    T.lastResult=null;
-    btnSave.disabled=true;
-    btnBase.disabled=false;
-    btnTop.disabled=false;
-    btnReset.disabled=false;
-    outMain.textContent='—';
-    outSub.textContent='Punta la BASE → “Tap Base”. Poi punta ALTO → “Tap Alto”.';
   }
 
   function compute(){
-    const hCm = parseFloat(inHeight.value);
+    const hCm = parseFloat(inH.value);
     const h = (Number.isFinite(hCm) && hCm>0) ? (hCm/100) : 1.5;
+    if(T.basePitch==null || T.topPitch==null) return;
 
-    const a = T.basePitchDeg;
-    const b = T.topPitchDeg;
-    if(a==null || b==null) return;
-
-    const tanA = Math.tan(Math.abs(rad(a)));
+    const tanA = Math.tan(Math.abs(rad(T.basePitch)));
     if(!Number.isFinite(tanA) || tanA < 1e-4){
       outMain.textContent='Errore';
-      outSub.textContent='Angolo base troppo vicino a orizzontale. Punta più verso il basso e ritappa.';
+      outSub.textContent='Angolo BASE troppo orizzontale. Punta più in basso e ritappa.';
       return;
     }
-
     const D = h / tanA;
-    const H = h + D * Math.tan(rad(b));
+    const H = h + D * Math.tan(rad(T.topPitch));
 
-    T.lastResult = { distance:D, height:H, hEye:h, aDeg:a, bDeg:b };
-
+    T.last = {D,H};
     outMain.textContent = `Distanza: ${fmt(D)} • Altezza: ${fmt(H)}`;
-    outSub.textContent = `Base: ${a.toFixed(1)}° • Alto: ${b.toFixed(1)}° • h: ${(h*100).toFixed(0)} cm`;
+    outSub.textContent = `Base: ${T.basePitch.toFixed(1)}° • Alto: ${T.topPitch.toFixed(1)}° • h: ${(h*100).toFixed(0)} cm`;
     btnSave.disabled=false;
   }
 
-  btnEnable.addEventListener('click', enableSensors);
+  function reset(){
+    T.basePitch=null; T.topPitch=null; T.last=null;
+    btnSave.disabled=true;
+    outMain.textContent='—';
+    outSub.textContent='Punta BASE → Tap Base. Poi punta ALTO → Tap Alto.';
+  }
+
+  btnCam.addEventListener('click', async () => {
+    try{
+      await startCamera(tVideo);
+      set('Camera: OK','ok');
+      drawCrosshair();
+    }catch(err){
+      set('Camera: KO','bad');
+      outSub.textContent = `Camera non disponibile: ${err.message}`;
+    }
+  });
+
+  btnSen.addEventListener('click', enableSensors);
 
   btnBase.addEventListener('click', () => {
-    if(T.pitchDeg==null){ outSub.textContent='Sensori non pronti. Premi “Attiva sensori”.'; return; }
-    T.basePitchDeg = T.pitchDeg;
-    outSub.textContent = `BASE salvata (${T.basePitchDeg.toFixed(1)}°). Ora punta ALTO → Tap Alto.`;
+    if(T.pitchDeg==null){
+      outSub.textContent='Prima “Attiva sensori”.';
+      return;
+    }
+    T.basePitch = T.pitchDeg;
+    outSub.textContent = `BASE salvata (${T.basePitch.toFixed(1)}°). Ora punta ALTO → Tap Alto.`;
     compute();
   });
 
   btnTop.addEventListener('click', () => {
-    if(T.pitchDeg==null){ outSub.textContent='Sensori non pronti. Premi “Attiva sensori”.'; return; }
-    T.topPitchDeg = T.pitchDeg;
-    outSub.textContent = `ALTO salvato (${T.topPitchDeg.toFixed(1)}°).`;
+    if(T.pitchDeg==null){
+      outSub.textContent='Prima “Attiva sensori”.';
+      return;
+    }
+    T.topPitch = T.pitchDeg;
+    outSub.textContent = `ALTO salvato (${T.topPitch.toFixed(1)}°).`;
     compute();
   });
 
   btnReset.addEventListener('click', reset);
 
   btnSave.addEventListener('click', () => {
-    if(!T.lastResult) return;
-    addHistory(`Telemetro — D: ${fmt(T.lastResult.distance)} • H: ${fmt(T.lastResult.height)}`);
+    if(!T.last) return;
+    addHistory(`Telemetro — D: ${fmt(T.last.D)} • H: ${fmt(T.last.H)}`);
     btnSave.disabled=true;
     outSub.textContent='Salvato ✅';
   });
 
-  btnClear.addEventListener('click', () => { T.history=[]; updateHistoryUI(); });
+  btnClear.addEventListener('click', () => { T.history=[]; updateHistory(); });
 
   // init
-  setPill('Sensori: —','warn');
-  btnBase.disabled=true;
-  btnTop.disabled=true;
-  btnReset.disabled=true;
-  btnSave.disabled=true;
-  updateHistoryUI();
+  set('Stato: pronto','warn');
+  updateHistory();
+  drawCrosshair();
 })();
 
-// default view
+/* ========= AR MODULE (camera always + try WebXR) ========= */
+(() => {
+  const arVideo = document.getElementById('arVideo');
+  const arHud   = document.getElementById('arHud');
+  const btnCam  = document.getElementById('arStartCam');
+  const btnTry  = document.getElementById('arTryWebXR');
+  const btnReset= document.getElementById('arReset');
+  const btnSave = document.getElementById('arSave');
+  const btnClear= document.getElementById('arClearHistory');
+  const pillAR  = document.getElementById('arPill');
+  const pillMode= document.getElementById('arModePill');
+  const modeSel = document.getElementById('arModeSel');
+  const outMain = document.getElementById('arOutMain');
+  const outSub  = document.getElementById('arOutSub');
+  const histLbl = document.getElementById('arHistLabel');
+  const histList= document.getElementById('arHistList');
+
+  const A = {
+    webxr:false,
+    history:[],
+    // placeholders: se WebXR non parte non facciamo finta di misurare
+  };
+
+  function setPillLocal(text, kind){ setPill(pillAR,text,kind); }
+  function setResult(m,s){ outMain.textContent=m; outSub.textContent=s||''; }
+  function updateHistory(){
+    histList.innerHTML='';
+    A.history.forEach(x=>{const li=document.createElement('li'); li.textContent=x; histList.appendChild(li);});
+    histLbl.textContent = `Storico misure (${A.history.length}/10)`;
+  }
+  function addHistory(x){
+    if(A.history.length===10) A.history=[];
+    A.history.push(x);
+    updateHistory();
+  }
+  function drawCrosshair(){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = arVideo.getBoundingClientRect();
+    arHud.width  = Math.max(1, Math.round(rect.width * dpr));
+    arHud.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = arHud.getContext('2d');
+    ctx.clearRect(0,0,arHud.width,arHud.height);
+    const cx = arHud.width/2, cy = arHud.height/2;
+    ctx.strokeStyle='rgba(245,245,247,.92)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx-18,cy); ctx.lineTo(cx+18,cy);
+    ctx.moveTo(cx,cy-18); ctx.lineTo(cx,cy+18);
+    ctx.stroke();
+  }
+  window.addEventListener('resize', drawCrosshair);
+
+  btnCam.addEventListener('click', async () => {
+    try{
+      await startCamera(arVideo);
+      setPillLocal('AR: camera OK','ok');
+      drawCrosshair();
+      setResult('—','Camera attiva. Ora prova “Prova AR (WebXR)”.');
+    }catch(err){
+      setPillLocal('AR: camera KO','bad');
+      setResult('Errore camera', err.message);
+    }
+  });
+
+  btnTry.addEventListener('click', async () => {
+    // qui NON invento misure: se WebXR non parte, lo diciamo e basta.
+    const ok = await checkWebXRAR();
+    if(!ok){
+      setPillLocal('AR: non supportato','warn');
+      setResult('AR non disponibile','Questo dispositivo/browser non supporta WebXR AR. Usa Telemetro.');
+      return;
+    }
+    setPillLocal('AR: supporto OK','ok');
+    setResult('AR supportato','WebXR AR disponibile: qui si integra la misura reale A→B (step successivo).');
+    // Nota: implementare WebXR hit-test + distance come modulo completo è il prossimo step.
+    // Prima dovevamo risolvere “camera non si apre”.
+  });
+
+  btnReset.addEventListener('click', () => {
+    setResult('—','Reset fatto.');
+    btnSave.disabled = true;
+  });
+
+  btnSave.addEventListener('click', () => {
+    // placeholder: in AR reale salveremo le misure
+    addHistory('AR — (misura da implementare)');
+    btnSave.disabled = true;
+  });
+
+  btnClear.addEventListener('click', () => { A.history=[]; updateHistory(); });
+
+  modeSel.addEventListener('change', () => {
+    pillMode.textContent = `Modalità: ${modeSel.value === 'distance' ? 'Distanza' : 'Area'}`;
+  });
+
+  // init
+  setPillLocal('AR: —','warn');
+  pillMode.textContent = 'Modalità: Distanza';
+  updateHistory();
+  drawCrosshair();
+})();
 show('home');
 </script>
 </body>
